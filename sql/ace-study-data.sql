@@ -1,0 +1,14 @@
+-- Ace study data — SCHEMA REFERENCE ONLY (tables already exist in Supabase)
+-- ace-db.js is aligned to these column names. Do not run CREATE TABLE if you already migrated.
+
+-- study_sets:
+--   id uuid, user_id uuid, title text, subject text, source_text text not null,
+--   difficulty text, extracted_content jsonb not null, created_at, updated_at
+--
+-- generated_materials:
+--   id, user_id, study_set_id, title, material_type, content, created_at, updated_at
+--   material_type CHECK: cheatsheet | quiz | flashcard | formula_sheet
+--   (see sql/generated-materials-material-type-constraint.sql)
+--
+-- RLS: each table should allow authenticated users only their own rows (auth.uid() = user_id).
+-- See sql/ace-rls-reference.sql for policy templates to compare in the dashboard.

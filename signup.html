@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Ace — Create Account</title>
+
+  <style>
+    :root {
+  --night: #10202d;
+  --deep: #1a3040;
+  --blue-grey: #4d6879;
+  --steel: #8fa8b7;
+  --text: #f4f7f9;
+  --muted: rgba(226, 235, 240, .72);
+  --line: rgba(220, 232, 239, .20);
+  --glass: rgba(40, 63, 78, .60);
+}
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+
+  background:
+    radial-gradient(
+      ellipse at 15% 15%,
+      rgba(176, 201, 213, .28),
+      transparent 34%
+    ),
+    radial-gradient(
+      ellipse at 85% 20%,
+      rgba(116, 151, 169, .28),
+      transparent 40%
+    ),
+    radial-gradient(
+      ellipse at 50% 100%,
+      rgba(79, 113, 132, .30),
+      transparent 50%
+    ),
+    linear-gradient(
+      135deg,
+      #10202d 0%,
+      #1b3444 48%,
+      #294657 100%
+    );
+}
+
+    /* Atmospheric background */
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: -15%;
+      z-index: -2;
+      pointer-events: none;
+
+      background:
+        radial-gradient(
+          circle at 20% 25%,
+          rgba(170, 195, 208, .10),
+          transparent 22%
+        ),
+        radial-gradient(
+          circle at 78% 18%,
+          rgba(111, 145, 162, .13),
+          transparent 25%
+        ),
+        radial-gradient(
+          circle at 55% 80%,
+          rgba(68, 103, 123, .12),
+          transparent 30%
+        );
+
+      filter: blur(55px);
+      animation: atmosphereDrift 18s ease-in-out infinite alternate;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+
+      background:
+        linear-gradient(
+          115deg,
+          transparent 0%,
+          rgba(255,255,255,.025) 42%,
+          transparent 70%
+        );
+
+      opacity: .7;
+    }
+
+    @keyframes atmosphereDrift {
+      0% {
+        transform: translate3d(-1%, -1%, 0) scale(1);
+      }
+
+      50% {
+        transform: translate3d(2%, 1%, 0) scale(1.04);
+      }
+
+      100% {
+        transform: translate3d(-1%, 3%, 0) scale(1.08);
+      }
+    }
+
+    /* Top navigation */
+
+    .topbar {
+      position: relative;
+      z-index: 10;
+
+      height: 78px;
+
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      padding: 0 5vw;
+
+background: rgba(20, 39, 52, .62);
+border-bottom: 1px solid rgba(220, 232, 239, .16);
+
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+
+      animation: topbarIn .8s cubic-bezier(.16, 1, .3, 1) both;
+    }
+
+    .logo {
+      color: #f1f5f7;
+      text-decoration: none;
+
+      font-size: 14px;
+      font-weight: 650;
+
+      letter-spacing: .16em;
+      text-transform: uppercase;
+
+      transition:
+        opacity .25s ease,
+        transform .25s ease;
+    }
+
+    .logo:hover {
+      opacity: .75;
+      transform: translateY(-1px);
+    }
+
+    .back {
+      color: rgba(225, 235, 241, .58);
+      text-decoration: none;
+
+      font-size: 12px;
+      letter-spacing: .03em;
+
+      transition:
+        color .25s ease,
+        transform .25s ease;
+    }
+
+    .back:hover {
+      color: #f1f5f7;
+      transform: translateX(-3px);
+    }
+
+    /* Main */
+
+    .page {
+      min-height: calc(100vh - 78px);
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 65px 24px 80px;
+    }
+
+    .signup-layout {
+      width: min(1120px, 100%);
+
+      display: grid;
+      grid-template-columns: .95fr 1.05fr;
+
+      gap: 90px;
+      align-items: center;
+    }
+
+    /* Left content */
+
+    .intro {
+      animation: cinematicRise .9s cubic-bezier(.16, 1, .3, 1) both;
+    }
+
+    .eyebrow {
+      color: #a9c0ce;
+
+      font-size: 10px;
+      font-weight: 700;
+
+      letter-spacing: .28em;
+      text-transform: uppercase;
+
+      margin-bottom: 22px;
+    }
+
+    .intro h1 {
+      color: #f2f6f8;
+
+      font-size: clamp(3.3rem, 6vw, 6.4rem);
+      font-weight: 300;
+
+      line-height: .91;
+      letter-spacing: -.065em;
+    }
+
+    .intro p {
+      max-width: 470px;
+
+      margin-top: 28px;
+
+      color: var(--muted);
+
+      font-size: 14px;
+      line-height: 1.85;
+    }
+
+    .benefits {
+      display: grid;
+      gap: 12px;
+
+      margin-top: 35px;
+    }
+
+    .benefit {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+
+      color: rgba(220, 230, 236, .66);
+
+      font-size: 12px;
+    }
+
+    .benefit-dot {
+      width: 6px;
+      height: 6px;
+
+      flex-shrink: 0;
+
+      border-radius: 50%;
+
+      background: #a9c0cc;
+
+      box-shadow:
+        0 0 12px rgba(169, 192, 204, .45);
+    }
+
+    /* Signup card */
+
+    .signup-card {
+      position: relative;
+
+      padding: 40px;
+
+      border-radius: 28px;
+
+      background:
+  linear-gradient(
+    145deg,
+    rgba(70, 98, 113, .68),
+    rgba(27, 49, 63, .72)
+  );
+
+     border: 1px solid rgba(220, 232, 239, .22);
+
+      box-shadow:
+        0 35px 100px rgba(0, 0, 0, .42),
+        inset 0 1px 0 rgba(255,255,255,.09);
+
+      backdrop-filter: blur(30px) saturate(110%);
+      -webkit-backdrop-filter: blur(30px) saturate(110%);
+
+      animation:
+        cardFloatIn
+        900ms
+        100ms
+        cubic-bezier(.16, 1, .3, 1)
+        both;
+
+      overflow: hidden;
+    }
+
+    .signup-card::before {
+      content: "";
+
+      position: absolute;
+
+      width: 260px;
+      height: 260px;
+
+      top: -150px;
+      right: -120px;
+
+      border-radius: 50%;
+
+      background:
+        radial-gradient(
+          circle,
+          rgba(164, 191, 205, .14),
+          transparent 68%
+        );
+
+      filter: blur(8px);
+
+      pointer-events: none;
+    }
+
+    .signup-card::after {
+      content: "";
+
+      position: absolute;
+
+      inset: 0;
+
+      border-radius: inherit;
+
+      background:
+        linear-gradient(
+          120deg,
+          rgba(255,255,255,.06),
+          transparent 25%,
+          transparent 75%,
+          rgba(255,255,255,.025)
+        );
+
+      pointer-events: none;
+    }
+
+    .form-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .form-title {
+      color: #f4f7f9;
+
+      font-size: 28px;
+      font-weight: 450;
+
+      letter-spacing: -.035em;
+    }
+
+    .subtitle {
+      margin-top: 7px;
+
+      color: rgba(220, 230, 236, .52);
+
+      font-size: 12px;
+    }
+
+    /* Form */
+
+    .signup-form {
+      margin-top: 30px;
+    }
+
+    .field {
+      margin-bottom: 17px;
+    }
+
+    .field label {
+      display: block;
+
+      margin-bottom: 7px;
+
+      color: rgba(228, 236, 241, .68);
+
+      font-size: 10px;
+      font-weight: 650;
+
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .input {
+      width: 100%;
+
+      height: 48px;
+
+      padding: 0 15px;
+
+      border-radius: 11px;
+
+      border: 1px solid rgba(210, 227, 235, .20);
+
+      background: rgba(17, 36, 48, .48);
+
+      color: #f1f5f7;
+
+      outline: none;
+
+      font-size: 13px;
+
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.025);
+
+      transition:
+        border-color .25s ease,
+        background .25s ease,
+        box-shadow .25s ease,
+        transform .25s ease;
+    }
+
+    .input::placeholder {
+      color: rgba(210, 223, 231, .30);
+    }
+
+    .input:hover {
+      border-color: rgba(205, 222, 232, .19);
+    }
+
+    .input:focus {
+      border-color: rgba(164, 192, 207, .48);
+
+      background: rgba(7, 20, 31, .62);
+
+      box-shadow:
+        0 0 0 3px rgba(128, 158, 175, .08),
+        inset 0 1px 0 rgba(255,255,255,.04);
+    }
+
+    /* Terms */
+
+    .terms {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+
+      margin: 21px 0;
+    }
+
+    .terms input {
+      width: 14px;
+      height: 14px;
+
+      margin-top: 2px;
+
+      accent-color: #7891a2;
+
+      cursor: pointer;
+    }
+
+    .terms label {
+      color: rgba(220, 230, 236, .50);
+
+      font-size: 11px;
+      line-height: 1.55;
+
+      cursor: pointer;
+    }
+
+    .terms a {
+      color: #a9c0ce;
+      text-decoration: none;
+    }
+
+    .terms a:hover {
+      text-decoration: underline;
+    }
+
+    /* Main button */
+
+    .create-btn {
+      width: 100%;
+
+      padding: 14px 18px;
+
+      border-radius: 11px;
+
+      border: 1px solid rgba(200, 220, 230, .15);
+
+    background:
+  linear-gradient(
+    135deg,
+    #547082,
+    #7894a3
+  );
+
+      color: #f5f8fa;
+
+      font-size: 12px;
+      font-weight: 700;
+
+      letter-spacing: .05em;
+
+      box-shadow:
+  0 12px 30px rgba(20, 40, 52, .25),
+  inset 0 1px 0 rgba(255,255,255,.22);
+
+      cursor: pointer;
+
+      transition:
+        transform .25s ease,
+        box-shadow .25s ease,
+        filter .25s ease;
+    }
+
+    .create-btn:hover {
+      transform: translateY(-2px);
+
+      filter: brightness(1.08);
+
+      box-shadow:
+        0 17px 35px rgba(4, 15, 24, .42),
+        inset 0 1px 0 rgba(255,255,255,.18);
+    }
+
+    .create-btn:active {
+      transform: translateY(0) scale(.99);
+    }
+
+    .create-btn.loading {
+      pointer-events: none;
+      opacity: .72;
+    }
+
+    /* Divider */
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+
+      margin: 22px 0;
+
+      color: rgba(220, 230, 236, .32);
+
+      font-size: 10px;
+      letter-spacing: .15em;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: "";
+
+      flex: 1;
+
+      height: 1px;
+
+      background: rgba(210, 225, 235, .10);
+    }
+
+    /* Google */
+
+    .google-btn {
+      width: 100%;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+
+      padding: 13px 18px;
+
+      border-radius: 11px;
+
+      border: 1px solid rgba(205, 222, 232, .13);
+
+      background: rgba(255,255,255,.035);
+
+      color: rgba(240, 246, 249, .82);
+
+      font-size: 11px;
+      font-weight: 650;
+
+      cursor: pointer;
+
+      transition:
+        background .25s ease,
+        border-color .25s ease,
+        transform .25s ease;
+    }
+
+    .google-btn:hover {
+      background: rgba(255,255,255,.07);
+
+      border-color: rgba(205,222,232,.23);
+
+      transform: translateY(-1px);
+    }
+
+    .google-icon {
+      width: 16px;
+      height: 16px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 50%;
+
+      background: #fff;
+
+      color: #4285f4;
+
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    /* Sign in */
+
+    .signin {
+      margin-top: 22px;
+
+      text-align: center;
+
+      color: rgba(220, 230, 236, .45);
+
+      font-size: 11px;
+    }
+
+    .signin a {
+      color: #b3c7d2;
+
+      text-decoration: none;
+
+      font-weight: 600;
+    }
+
+    .signin a:hover {
+      color: #f1f5f7;
+      text-decoration: underline;
+    }
+
+    /* Error */
+
+    .error-message {
+      display: none;
+
+      margin-bottom: 16px;
+      padding: 11px 13px;
+
+      border-radius: 9px;
+
+      border: 1px solid rgba(220, 120, 120, .18);
+
+      background: rgba(150, 50, 50, .10);
+
+      color: rgba(245, 205, 205, .85);
+
+      font-size: 11px;
+    }
+
+    .error-message.show {
+      display: block;
+      animation: errorIn .3s ease both;
+    }
+
+    @keyframes errorIn {
+      from {
+        opacity: 0;
+        transform: translateY(-5px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Success */
+
+    .success-screen {
+      display: none;
+
+      min-height: 370px;
+
+      align-items: center;
+      justify-content: center;
+
+      flex-direction: column;
+
+      text-align: center;
+    }
+
+    .success-screen.show {
+      display: flex;
+      animation: cinematicRise .7s cubic-bezier(.16,1,.3,1) both;
+    }
+
+    .success-icon {
+      width: 68px;
+      height: 68px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      margin-bottom: 22px;
+
+      border-radius: 50%;
+
+      border: 1px solid rgba(190, 214, 225, .20);
+
+      background:
+        radial-gradient(
+          circle,
+          rgba(137, 171, 188, .20),
+          rgba(255,255,255,.025)
+        );
+
+      color: #c3d7e0;
+
+      font-size: 25px;
+
+      box-shadow:
+        0 0 35px rgba(130, 166, 184, .10);
+    }
+
+    .success-screen h2 {
+      color: #f1f5f7;
+
+      font-size: 27px;
+      font-weight: 350;
+
+      letter-spacing: -.035em;
+    }
+
+    .success-screen p {
+      max-width: 320px;
+
+      margin-top: 10px;
+
+      color: rgba(220, 230, 236, .55);
+
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    /* Animations */
+
+    @keyframes cinematicRise {
+      from {
+        opacity: 0;
+        transform: translateY(35px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes cardFloatIn {
+      0% {
+        opacity: 0;
+        transform: translateY(55px) scale(.96);
+      }
+
+      60% {
+        opacity: 1;
+        transform: translateY(-4px) scale(1.01);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes topbarIn {
+      from {
+        opacity: 0;
+        transform: translateY(-15px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Mobile */
+
+    @media (max-width: 800px) {
+
+      .topbar {
+        height: 70px;
+        padding: 0 22px;
+      }
+
+      .page {
+        min-height: auto;
+        padding: 55px 18px 65px;
+      }
+
+      .signup-layout {
+        grid-template-columns: 1fr;
+        gap: 45px;
+      }
+
+      .intro {
+        text-align: center;
+      }
+
+      .intro h1 {
+        font-size: clamp(3.2rem, 15vw, 5rem);
+      }
+
+      .intro p {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .benefits {
+        width: max-content;
+        max-width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+
+        text-align: left;
+      }
+
+      .signup-card {
+        padding: 27px 22px;
+        border-radius: 23px;
+      }
+    }
+
+    @media (max-width: 430px) {
+
+      .logo {
+        font-size: 12px;
+      }
+
+      .back {
+        font-size: 10px;
+      }
+
+      .form-title {
+        font-size: 24px;
+      }
+
+      .intro h1 {
+        font-size: 3.2rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <a href="index.html" class="logo">Ace</a>
+
+    <a href="index.html" class="back">
+      ← Back to landing
+    </a>
+  </header>
+
+
+  <!-- MAIN -->
+  <main class="page">
+
+    <div class="signup-layout">
+
+      <!-- LEFT SIDE -->
+      <section class="intro">
+
+        <div class="eyebrow">
+          Ace / Join
+        </div>
+
+        <h1>
+          Build your own
+          intelligent
+          workspace.
+        </h1>
+
+        <p>
+          Start with the essentials, then unlock deeper research,
+          creation and advanced models inside one intelligent
+          workspace.
+        </p>
+
+        <div class="benefits">
+
+          <div class="benefit">
+            <span class="benefit-dot"></span>
+            Intelligent conversations and research
+          </div>
+
+          <div class="benefit">
+            <span class="benefit-dot"></span>
+            Create content, images and code
+          </div>
+
+          <div class="benefit">
+            <span class="benefit-dot"></span>
+            Organize projects in one workspace
+          </div>
+
+          <div class="benefit">
+            <span class="benefit-dot"></span>
+            Upgrade whenever you need more power
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- SIGNUP CARD -->
+      <section class="signup-card">
+
+        <div class="form-content" id="signupContent">
+
+          <h2 class="form-title">
+            Create your account
+          </h2>
+
+          <p class="subtitle">
+            It only takes a minute.
+          </p>
+
+
+          <div
+            class="error-message"
+            id="errorMessage"
+          ></div>
+
+
+          <form
+            class="signup-form"
+            id="signupForm"
+            novalidate
+          >
+
+            <!-- NAME -->
+            <div class="field">
+
+              <label for="fullName">
+                Full name
+              </label>
+
+              <input
+                class="input"
+                id="fullName"
+                name="fullName"
+                type="text"
+                placeholder="Enter your full name"
+                autocomplete="name"
+                required
+              >
+
+            </div>
+
+
+            <!-- EMAIL -->
+            <div class="field">
+
+              <label for="email">
+                Email address
+              </label>
+
+              <input
+                class="input"
+                id="email"
+                name="email"
+                type="email"
+                placeholder="you@gmail.com"
+                autocomplete="email"
+                required
+              >
+
+            </div>
+
+
+            <!-- PASSWORD -->
+            <div class="field">
+
+              <label for="password">
+                Password
+              </label>
+
+              <input
+                class="input"
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Create a password"
+                autocomplete="new-password"
+                minlength="6"
+                required
+              >
+
+            </div>
+
+
+            <!-- CONFIRM PASSWORD -->
+            <div class="field">
+
+              <label for="confirmPassword">
+                Confirm password
+              </label>
+
+              <input
+                class="input"
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                placeholder="Confirm your password"
+                autocomplete="new-password"
+                minlength="6"
+                required
+              >
+
+            </div>
+
+
+            <!-- TERMS -->
+            <div class="terms">
+
+              <input
+                id="terms"
+                type="checkbox"
+                required
+              >
+
+              <label for="terms">
+                I agree to the
+                <a href="#" onclick="return false;">
+                  Terms of Service
+                </a>
+                and
+                <a href="#" onclick="return false;">
+                  Privacy Policy
+                </a>.
+              </label>
+
+            </div>
+
+
+            <!-- CREATE -->
+            <button
+              class="create-btn"
+              id="createBtn"
+              type="submit"
+            >
+              CREATE ACCOUNT →
+            </button>
+
+
+            <!-- DIVIDER -->
+            <div class="divider">
+              OR
+            </div>
+
+
+            <!-- GOOGLE -->
+            <button
+              class="google-btn"
+              id="googleBtn"
+              type="button"
+            >
+              <span class="google-icon">
+                G
+              </span>
+
+              Continue with Google
+            </button>
+
+
+            <!-- LOGIN -->
+            <p class="signin">
+              Already have an account?
+              <a href="login.html">
+                Sign in
+              </a>
+            </p>
+
+          </form>
+
+        </div>
+
+
+        <!-- SUCCESS -->
+        <div
+          class="success-screen"
+          id="successScreen"
+        >
+
+          <div class="success-icon">
+            ✓
+          </div>
+
+          <h2>
+            Welcome to Ace.
+          </h2>
+
+          <p id="successMessage">
+            Your intelligent workspace is ready.
+            Taking you to your dashboard...
+          </p>
+
+        </div>
+
+      </section>
+
+    </div>
+
+  </main>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="supabase-client.js"></script>
+  <script src="auth.js"></script>
+  <script>
+
+    document.addEventListener("DOMContentLoaded", async function () {
+
+      if (!window.aceSupabaseInitOk) {
+        console.error("[Ace] Supabase is not configured. Check supabase-config.js.");
+        return;
+      }
+
+      await window.AceAuth.redirectIfAuthenticated("dashboard.html");
+
+      const signupForm =
+        document.getElementById("signupForm");
+
+      const createBtn =
+        document.getElementById("createBtn");
+
+      const googleBtn =
+        document.getElementById("googleBtn");
+
+      const errorMessage =
+        document.getElementById("errorMessage");
+
+      const signupContent =
+        document.getElementById("signupContent");
+
+      const successScreen =
+        document.getElementById("successScreen");
+
+      let signupInProgress = false;
+
+      function showError(message) {
+
+        errorMessage.textContent = message;
+
+        errorMessage.classList.add("show");
+
+      }
+
+
+      function clearError() {
+
+        errorMessage.textContent = "";
+
+        errorMessage.classList.remove("show");
+
+      }
+
+
+      function resetSignupButton() {
+
+        signupInProgress = false;
+        createBtn.classList.remove("loading");
+        createBtn.disabled = false;
+        createBtn.textContent = "CREATE ACCOUNT →";
+
+      }
+
+
+      if (!signupForm || signupForm.dataset.aceSignupBound === "1") {
+        return;
+      }
+
+      signupForm.dataset.aceSignupBound = "1";
+
+      signupForm.addEventListener(
+      "submit",
+      function(event) {
+
+        event.preventDefault();
+
+        if (signupInProgress) {
+          return;
+        }
+
+        clearError();
+
+
+        const name =
+          document.getElementById("fullName").value.trim();
+
+        const email = window.AceAuth.normalizeEmail(
+          document.getElementById("email").value
+        );
+
+        const password =
+          document.getElementById("password").value;
+
+        const confirmPassword =
+          document.getElementById("confirmPassword").value;
+
+        const terms =
+          document.getElementById("terms").checked;
+
+
+        if (!name) {
+
+          showError("Please enter your full name.");
+
+          return;
+
+        }
+
+
+        if (!email) {
+
+          showError("Please enter your email address.");
+
+          return;
+
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+
+          showError(
+            "Enter a valid email address (for example name@gmail.com)."
+          );
+
+          return;
+
+        }
+
+
+        if (password.length < 6) {
+
+          showError(
+            "Password must contain at least 6 characters."
+          );
+
+          return;
+
+        }
+
+
+        if (password !== confirmPassword) {
+
+          showError(
+            "Passwords do not match."
+          );
+
+          return;
+
+        }
+
+
+        if (!terms) {
+
+          showError(
+            "Please accept the Terms of Service and Privacy Policy."
+          );
+
+          return;
+
+        }
+
+
+        signupInProgress = true;
+
+        createBtn.classList.add("loading");
+
+        createBtn.disabled = true;
+
+        createBtn.textContent =
+          "CREATING ACCOUNT...";
+
+
+        window.AceAuth
+          .signUp(email, password, name)
+          .then(function (result) {
+
+            if (result.error) {
+              resetSignupButton();
+              showError(window.AceAuth.formatAuthError(result.error));
+              return;
+            }
+
+            signupContent.style.display = "none";
+            successScreen.classList.add("show");
+
+            const successMessage =
+              document.getElementById("successMessage");
+
+            if (result.data.session) {
+
+              if (successMessage) {
+                successMessage.textContent =
+                  "Your account is ready. Taking you to your dashboard...";
+              }
+
+              setTimeout(function () {
+                window.location.href = "dashboard.html";
+              }, 1200);
+
+              return;
+
+            }
+
+            if (successMessage) {
+              successMessage.textContent =
+                "Check your email to confirm your account, then sign in on the login page.";
+            }
+
+          })
+          .catch(function (caught) {
+
+            resetSignupButton();
+
+            if (caught && window.AceAuth) {
+              showError(window.AceAuth.formatAuthError(caught));
+              return;
+            }
+
+            showError("Could not create your account. Please try again.");
+
+          });
+
+      }
+    );
+
+
+      googleBtn?.addEventListener(
+        "click",
+        function() {
+
+          clearError();
+
+          showError("Google sign-in is not configured yet.");
+
+        }
+      );
+
+
+      document
+        .querySelectorAll(".input")
+        .forEach(function(input) {
+
+          input.addEventListener(
+            "input",
+            clearError
+          );
+
+        });
+
+    });
+
+  </script>
+
+</body>
+</html>

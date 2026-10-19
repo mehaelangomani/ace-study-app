@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Sign In — Ace</title>
+  <meta
+    name="description"
+    content="Sign in to Ace — extract concepts, organize knowledge, and revise smarter from your study notes."
+  >
+
+  <link rel="stylesheet" href="login.css">
+</head>
+
+<body>
+
+  <main class="login-page">
+
+    <!-- Background artwork -->
+    <div class="art-orbit orbit-one"></div>
+    <div class="art-orbit orbit-two"></div>
+    <div class="art-glow glow-one"></div>
+    <div class="art-glow glow-two"></div>
+
+    <!-- Top navigation -->
+    <header class="login-header">
+      <a href="index.html" class="brand">
+        <span class="brand-mark">AC</span>
+        <span>ACE</span>
+      </a>
+
+      <a href="index.html" class="back-link">
+        <span>←</span>
+        BACK TO ACE
+      </a>
+    </header>
+
+    <!-- Login content -->
+    <section class="login-content">
+
+      <div class="login-intro">
+        <p class="eyebrow">ACE / ACCOUNT</p>
+
+        <h1>
+          WELCOME<br>
+          <span>BACK.</span>
+        </h1>
+
+        <p class="intro-text">
+          Continue where your ideas left off.
+          Extract, organize, revise and master your study content in one workspace.
+        </p>
+      </div>
+
+      <div class="login-form-wrap">
+
+        <div class="form-header">
+          <p class="form-kicker">SIGN IN</p>
+          <h2>Enter your workspace.</h2>
+        </div>
+
+        <form id="loginForm" novalidate>
+
+          <div class="field">
+            <label for="email">EMAIL ADDRESS</label>
+
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="you@example.com"
+              autocomplete="email"
+              required
+            >
+
+            <small class="error-message" id="email-error"></small>
+          </div>
+
+          <div class="field">
+            <div class="password-label">
+              <label for="password">PASSWORD</label>
+
+              <a href="#" id="forgot-password">
+                FORGOT PASSWORD?
+              </a>
+            </div>
+
+            <div class="password-input">
+              <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                required
+              >
+
+              <button
+                type="button"
+                class="password-toggle"
+                id="password-toggle"
+                aria-label="Show password"
+              >
+                SHOW
+              </button>
+            </div>
+
+            <small class="error-message" id="password-error"></small>
+          </div>
+
+          <button type="submit" class="login-button">
+            <span>SIGN IN</span>
+            <span class="button-arrow">→</span>
+          </button>
+
+          <div class="divider">
+            <span>OR</span>
+          </div>
+
+          <button type="button" class="google-button" id="google-login">
+            <span class="google-icon">G</span>
+            <span>CONTINUE WITH GOOGLE</span>
+          </button>
+
+        </form>
+
+        <p class="signup-prompt">
+          DON'T HAVE AN ACCOUNT?
+          <a href="signup.html">CREATE ONE</a>
+        </p>
+
+      </div>
+
+    </section>
+
+    <!-- Bottom information -->
+    <footer class="login-footer">
+      <span>© 2026 ACE</span>
+
+      <div>
+        <a href="#">PRIVACY</a>
+        <a href="#">TERMS</a>
+      </div>
+    </footer>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="supabase-client.js"></script>
+  <script src="auth.js"></script>
+  <script>
+document.addEventListener("DOMContentLoaded", async function () {
+
+  if (!window.aceSupabaseInitOk) {
+    console.error("[Ace] Supabase is not configured. Check supabase-config.js.");
+    return;
+  }
+
+  await window.AceAuth.redirectIfAuthenticated("dashboard.html");
+
+  const loginForm = document.getElementById("loginForm");
+  const emailError = document.getElementById("email-error");
+  const passwordError = document.getElementById("password-error");
+  const submitBtn = loginForm?.querySelector(".login-button");
+
+  function showAuthError(message) {
+    if (passwordError) {
+      passwordError.textContent = message;
+    }
+  }
+
+  function clearAuthError() {
+    if (emailError) {
+      emailError.textContent = "";
+    }
+    if (passwordError) {
+      passwordError.textContent = "";
+    }
+  }
+
+  if (loginForm) {
+
+    loginForm.addEventListener("submit", async function (event) {
+
+      event.preventDefault();
+      clearAuthError();
+
+      const emailInput = document.getElementById("email");
+      const passwordInput = document.getElementById("password");
+      const email = window.AceAuth.normalizeEmail(
+        emailInput ? emailInput.value : ""
+      );
+      const password = passwordInput ? passwordInput.value : "";
+
+      if (!email) {
+        if (emailError) {
+          emailError.textContent = "Please enter your email address.";
+        }
+        return;
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        if (emailError) {
+          emailError.textContent =
+            "Enter a valid email address (for example name@gmail.com).";
+        }
+        return;
+      }
+
+      if (!password) {
+        if (passwordError) {
+          passwordError.textContent = "Please enter your password.";
+        }
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+      }
+
+      const result = await window.AceAuth.signInWithPassword(
+        email,
+        password
+      );
+
+      if (submitBtn) {
+        submitBtn.disabled = false;
+      }
+
+      if (result.error) {
+        showAuthError(window.AceAuth.formatAuthError(result.error));
+        return;
+      }
+
+      window.location.href = "dashboard.html";
+
+    });
+
+  }
+
+  const googleLogin = document.getElementById("google-login");
+
+  googleLogin?.addEventListener("click", function () {
+    showAuthError("Google sign-in is not configured yet.");
+  });
+
+  const forgotPassword = document.getElementById("forgot-password");
+
+  forgotPassword?.addEventListener("click", async function (event) {
+
+    event.preventDefault();
+    clearAuthError();
+
+    const emailInput = document.getElementById("email");
+    const email = window.AceAuth.normalizeEmail(
+      emailInput ? emailInput.value : ""
+    );
+
+    if (!email) {
+      showAuthError("Enter your email above, then choose forgot password.");
+      return;
+    }
+
+    if (!window.aceSupabase) {
+      showAuthError("Supabase is not available.");
+      return;
+    }
+
+    const redirectTo = window.location.origin +
+      window.location.pathname.replace(/login\.html$/i, "login.html");
+
+    const { error } = await window.aceSupabase.auth.resetPasswordForEmail(
+      email,
+      { redirectTo: redirectTo }
+    );
+
+    if (error) {
+      showAuthError(window.AceAuth.formatAuthError(error));
+      return;
+    }
+
+    showAuthError(
+      "If an account exists for that email, a reset link has been sent."
+    );
+
+  });
+
+});
+  </script>
+
+</body>
+</html>

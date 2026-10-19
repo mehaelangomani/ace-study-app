@@ -1,0 +1,7 @@
+# Local Supabase credentials (publishable key still should not be committed)
+supabase-config.js
+
+# Ace backend secrets
+backend/.env
+backend/.venv/
+backend/venv/

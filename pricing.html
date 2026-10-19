@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ace — Pricing</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: Inter, Arial, sans-serif;
+      color: #eef4ff;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(115, 160, 190, .18), transparent 32%),
+        radial-gradient(circle at 80% 80%, rgba(120, 150, 180, .14), transparent 35%),
+        linear-gradient(135deg, #07111f, #152a3b 55%, #081522);
+      padding: 28px;
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: auto;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 70px;
+    }
+
+    .logo {
+      color: white;
+      text-decoration: none;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+
+    .back {
+      color: rgba(235,242,255,.7);
+      text-decoration: none;
+      padding: 10px 16px;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 999px;
+      backdrop-filter: blur(12px);
+    }
+
+    .back:hover {
+      color: white;
+      background: rgba(255,255,255,.06);
+    }
+
+    .heading {
+      text-align: center;
+      margin-bottom: 55px;
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: #aebfd0;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      font-size: clamp(42px, 7vw, 76px);
+      font-weight: 300;
+      letter-spacing: -.055em;
+      line-height: .95;
+    }
+
+    .heading p {
+      max-width: 600px;
+      margin: 22px auto 0;
+      color: rgba(235,242,255,.62);
+      line-height: 1.7;
+    }
+
+    .plans {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .plan {
+      position: relative;
+      padding: 32px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 28px;
+      background: rgba(255,255,255,.055);
+      backdrop-filter: blur(22px);
+      box-shadow: 0 30px 80px rgba(0,0,0,.22);
+      transition: transform .3s ease, border-color .3s ease;
+    }
+
+    .plan:hover {
+      transform: translateY(-8px);
+      border-color: rgba(255,255,255,.25);
+    }
+
+    .plan.pro {
+      border-color: rgba(180,205,225,.38);
+      background: rgba(255,255,255,.09);
+    }
+
+    .popular {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      background: rgba(255,255,255,.12);
+    }
+
+    .plan h2 {
+      font-size: 24px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .description {
+      color: rgba(235,242,255,.5);
+      font-size: 14px;
+      min-height: 42px;
+    }
+
+    .price {
+      margin: 25px 0;
+      font-size: 42px;
+      font-weight: 300;
+    }
+
+    .price span {
+      font-size: 14px;
+      color: rgba(235,242,255,.45);
+    }
+
+    .features {
+      list-style: none;
+      margin-bottom: 28px;
+    }
+
+    .features li {
+      padding: 10px 0;
+      color: rgba(235,242,255,.72);
+      font-size: 14px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+    }
+
+    .features li::before {
+      content: "✓";
+      margin-right: 10px;
+      color: #c6d8e7;
+    }
+
+    .choose {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.15);
+      background: rgba(255,255,255,.07);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: .25s;
+    }
+
+    .choose:hover {
+      background: rgba(255,255,255,.15);
+      transform: translateY(-2px);
+    }
+
+    .pro .choose {
+      background: linear-gradient(135deg, #30485d, #63788a);
+      border-color: rgba(255,255,255,.22);
+    }
+
+    .secure {
+      text-align: center;
+      margin-top: 35px;
+      color: rgba(235,242,255,.4);
+      font-size: 12px;
+    }
+
+    @media(max-width: 850px) {
+      .plans {
+        grid-template-columns: 1fr;
+        max-width: 500px;
+        margin: auto;
+      }
+
+      .topbar {
+        margin-bottom: 45px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="page">
+
+    <header class="topbar">
+      <a href="dashboard.html" class="logo">Ace</a>
+      <a href="dashboard.html" class="back">← Back to dashboard</a>
+    </header>
+
+    <section class="heading">
+      <div class="eyebrow">Ace / Plans</div>
+
+      <h1>Choose your level<br>of intelligence.</h1>
+
+      <p>
+        Start free. Upgrade when you need more power,
+        deeper research and larger projects.
+      </p>
+    </section>
+
+    <section class="plans">
+
+      <!-- FREE -->
+      <article class="plan">
+        <h2>Free</h2>
+
+        <p class="description">
+          For exploring Ace.
+        </p>
+
+        <div class="price">
+          ₹0 <span>/ month</span>
+        </div>
+
+        <ul class="features">
+          <li>20 messages / day</li>
+          <li>Basic AI models</li>
+          <li>Limited image generation</li>
+          <li>5 GB storage</li>
+        </ul>
+
+        <button class="choose" onclick="window.location.href='dashboard.html'">
+          CURRENT PLAN
+        </button>
+      </article>
+
+
+      <!-- PRO -->
+      <article class="plan pro">
+
+        <div class="popular">Most Popular</div>
+
+        <h2>Pro</h2>
+
+        <p class="description">
+          For serious AI work and creation.
+        </p>
+
+        <div class="price">
+          ₹799 <span>/ month</span>
+        </div>
+
+        <ul class="features">
+          <li>Unlimited conversations</li>
+          <li>Advanced AI models</li>
+          <li>Deep research</li>
+          <li>Projects & workflows</li>
+          <li>Image generation</li>
+          <li>50 GB storage</li>
+        </ul>
+
+        <button
+          class="choose"
+          onclick="window.location.href='payment.html'"
+        >
+          UPGRADE TO PRO →
+        </button>
+
+      </article>
+
+
+      <!-- TEAM -->
+      <article class="plan">
+
+        <h2>Team</h2>
+
+        <p class="description">
+          For teams and collaboration.
+        </p>
+
+        <div class="price">
+          ₹1,499 <span>/ user / month</span>
+        </div>
+
+        <ul class="features">
+          <li>Everything in Pro</li>
+          <li>Shared workspace</li>
+          <li>Admin controls</li>
+          <li>Team projects</li>
+          <li>Priority support</li>
+        </ul>
+
+        <button
+          class="choose"
+          onclick="window.location.href='payment.html?plan=team'"
+        >
+          CHOOSE TEAM →
+        </button>
+
+      </article>
+
+    </section>
+
+    <div class="secure">
+      🔒 Secure checkout · Cancel anytime
+    </div>
+
+  </div>
+<style>
+/* Smooth cinematic entrance */
+.topbar,
+.heading,
+.plan,
+.secure {
+  opacity: 0;
+  transform: translateY(35px);
+  animation: pricingEntrance 0.9s cubic-bezier(.16, 1, .3, 1) forwards;
+}
+
+.topbar {
+  animation-delay: 0.05s;
+}
+
+.heading {
+  animation-delay: 0.15s;
+}
+
+.plan:nth-child(1) {
+  animation-delay: 0.28s;
+}
+
+.plan:nth-child(2) {
+  animation-delay: 0.40s;
+}
+
+.plan:nth-child(3) {
+  animation-delay: 0.52s;
+}
+
+.secure {
+  animation-delay: 0.65s;
+}
+
+@keyframes pricingEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(35px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>
+</body>
+</html>

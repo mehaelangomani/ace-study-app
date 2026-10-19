@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ace — Secure Checkout</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: Inter, Arial, sans-serif;
+      color: #eef4ff;
+      background:
+        radial-gradient(circle at 15% 15%, rgba(115,160,190,.18), transparent 30%),
+        radial-gradient(circle at 85% 80%, rgba(120,150,180,.14), transparent 32%),
+        linear-gradient(135deg, #07111f, #152a3b 55%, #081522);
+      padding: 28px;
+    }
+
+    .page {
+      max-width: 1050px;
+      margin: auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 55px;
+    }
+
+    .logo {
+      color: white;
+      text-decoration: none;
+      font-weight: 700;
+      letter-spacing: .08em;
+      font-size: 20px;
+    }
+
+    .back {
+      color: rgba(235,242,255,.7);
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,.14);
+      padding: 10px 16px;
+      border-radius: 999px;
+    }
+
+    .back:hover {
+      color: white;
+      background: rgba(255,255,255,.06);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: .85fr 1.15fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .card {
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.055);
+      backdrop-filter: blur(24px);
+      border-radius: 28px;
+      padding: 32px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.22);
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: #aebfd0;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      font-size: clamp(38px, 5vw, 62px);
+      font-weight: 300;
+      letter-spacing: -.055em;
+      line-height: .95;
+      margin-bottom: 20px;
+    }
+
+    .intro {
+      color: rgba(235,242,255,.58);
+      line-height: 1.7;
+      margin-bottom: 35px;
+    }
+
+    .plan-name {
+      color: rgba(235,242,255,.5);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .15em;
+    }
+
+    .price {
+      font-size: 42px;
+      font-weight: 300;
+      margin: 8px 0 25px;
+    }
+
+    .price span {
+      font-size: 13px;
+      color: rgba(235,242,255,.45);
+    }
+
+    .features {
+      list-style: none;
+    }
+
+    .features li {
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      color: rgba(235,242,255,.7);
+      font-size: 14px;
+    }
+
+    .features li::before {
+      content: "✓";
+      color: #c7d9e7;
+      margin-right: 10px;
+    }
+
+    .checkout h2 {
+      font-size: 24px;
+      font-weight: 500;
+      margin-bottom: 25px;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: rgba(235,242,255,.65);
+      margin-bottom: 7px;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 14px 15px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.13);
+      background: rgba(0,0,0,.18);
+      color: white;
+      outline: none;
+      font: inherit;
+    }
+
+    input::placeholder {
+      color: rgba(235,242,255,.28);
+    }
+
+    input:focus,
+    select:focus {
+      border-color: rgba(190,210,225,.55);
+      box-shadow: 0 0 0 3px rgba(190,210,225,.07);
+    }
+
+    select option {
+      background: #152a3b;
+      color: white;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 25px 0;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,.1);
+    }
+
+    .summary span:first-child {
+      color: rgba(235,242,255,.6);
+    }
+
+    .summary strong {
+      font-size: 22px;
+      font-weight: 500;
+    }
+
+    .pay-btn {
+      width: 100%;
+      padding: 15px;
+      border-radius: 13px;
+      border: 1px solid rgba(255,255,255,.2);
+      background: linear-gradient(135deg, #30485d, #63788a);
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .25s;
+    }
+
+    .pay-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(0,0,0,.25);
+    }
+
+    .secure {
+      text-align: center;
+      color: rgba(235,242,255,.38);
+      font-size: 11px;
+      margin-top: 16px;
+    }
+
+    .success {
+      display: none;
+      text-align: center;
+      padding: 35px 10px;
+    }
+
+    .success-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(100,150,130,.15);
+      border: 1px solid rgba(150,210,180,.25);
+      font-size: 28px;
+    }
+
+    .success h2 {
+      font-size: 30px;
+      font-weight: 400;
+      margin-bottom: 10px;
+    }
+
+    .success p {
+      color: rgba(235,242,255,.55);
+      line-height: 1.6;
+      margin-bottom: 25px;
+    }
+
+    .dashboard-btn {
+      display: inline-block;
+      padding: 13px 20px;
+      border-radius: 12px;
+      color: white;
+      text-decoration: none;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.14);
+    }
+
+    @media(max-width: 800px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      body {
+        padding: 18px;
+      }
+
+      .card {
+        padding: 24px;
+      }
+    }
+
+    @media(max-width: 480px) {
+      .row {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        margin-bottom: 35px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="page">
+
+    <header class="topbar">
+      <a href="dashboard.html" class="logo">Ace</a>
+      <a href="pricing.html" class="back">← Back to plans</a>
+    </header>
+
+    <main class="layout">
+
+      <!-- PLAN SUMMARY -->
+      <section class="card">
+
+        <div class="eyebrow">Ace / Pro</div>
+
+        <h1>Unlock<br>Pro.</h1>
+
+        <p class="intro">
+          Take your AI workspace further with advanced models,
+          deeper research and unlimited conversations.
+        </p>
+
+        <div class="plan-name">Pro Plan</div>
+
+        <div class="price">
+          ₹799 <span>/ month</span>
+        </div>
+
+        <ul class="features">
+          <li>Unlimited conversations</li>
+          <li>Advanced AI models</li>
+          <li>Deep research</li>
+          <li>Projects & workflows</li>
+          <li>Image generation</li>
+          <li>50 GB storage</li>
+        </ul>
+
+      </section>
+
+
+      <!-- CHECKOUT -->
+      <section class="card checkout" id="checkoutCard">
+
+        <div id="checkoutForm">
+
+          <h2>Secure checkout</h2>
+
+          <div class="field">
+            <label>Cardholder name</label>
+            <input
+              type="text"
+              id="cardName"
+              placeholder="Enter your name"
+            >
+          </div>
+
+          <div class="field">
+            <label>Card number</label>
+            <input
+              type="text"
+              id="cardNumber"
+              maxlength="19"
+              placeholder="1234 5678 9012 3456"
+            >
+          </div>
+
+          <div class="row">
+
+            <div class="field">
+              <label>Expiry date</label>
+              <input
+                type="text"
+                id="expiry"
+                maxlength="5"
+                placeholder="MM/YY"
+              >
+            </div>
+
+            <div class="field">
+              <label>CVV</label>
+              <input
+                type="password"
+                id="cvv"
+                maxlength="3"
+                placeholder="•••"
+              >
+            </div>
+
+          </div>
+
+          <div class="field">
+            <label>Billing country</label>
+
+            <select id="country">
+              <option value="India">India</option>
+              <option value="United States">United States</option>
+              <option value="United Kingdom">United Kingdom</option>
+              <option value="Singapore">Singapore</option>
+              <option value="Australia">Australia</option>
+            </select>
+          </div>
+
+          <div class="summary">
+            <span>Total today</span>
+            <strong>₹799</strong>
+          </div>
+
+          <button class="pay-btn" id="payBtn">
+            PAY ₹799 →
+          </button>
+
+          <div class="secure">
+            🔒 Secure checkout · Cancel anytime
+          </div>
+
+        </div>
+
+
+        <!-- SUCCESS -->
+        <div class="success" id="successMessage">
+
+          <div class="success-icon">✓</div>
+
+          <h2>You're now Pro.</h2>
+
+          <p>
+            Your Ace Pro plan has been activated successfully.
+            You can now return to your workspace and start creating.
+          </p>
+
+          <a href="dashboard.html" class="dashboard-btn">
+            GO TO DASHBOARD →
+          </a>
+
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+
+  <script>
+
+    const cardNumber = document.getElementById("cardNumber");
+    const expiry = document.getElementById("expiry");
+    const payBtn = document.getElementById("payBtn");
+    const checkoutForm = document.getElementById("checkoutForm");
+    const successMessage = document.getElementById("successMessage");
+
+    /* Card number formatting */
+    cardNumber.addEventListener("input", function () {
+      let value = this.value.replace(/\D/g, "").slice(0, 16);
+      this.value = value.replace(/(.{4})/g, "$1 ").trim();
+    });
+
+    /* Expiry formatting */
+    expiry.addEventListener("input", function () {
+      let value = this.value.replace(/\D/g, "").slice(0, 4);
+
+      if (value.length > 2) {
+        value = value.slice(0, 2) + "/" + value.slice(2);
+      }
+
+      this.value = value;
+    });
+
+    /* Demo payment */
+    payBtn.addEventListener("click", function () {
+
+      const name = document.getElementById("cardName").value.trim();
+      const number = cardNumber.value.replace(/\s/g, "");
+      const expiryValue = expiry.value.trim();
+      const cvv = document.getElementById("cvv").value.trim();
+
+      if (!name || number.length < 16 || expiryValue.length < 5 || cvv.length < 3) {
+        alert("Please enter all payment details.");
+        return;
+      }
+
+      payBtn.textContent = "PROCESSING...";
+
+      setTimeout(() => {
+
+        checkoutForm.style.display = "none";
+        successMessage.style.display = "block";
+
+      }, 1000);
+
+    });
+
+  </script>
+
+  <style>
+body > * {
+  animation: pageRise 0.8s cubic-bezier(.16,1,.3,1) both;
+}
+
+@keyframes pageRise {
+  from {
+    opacity: 0;
+    transform: translateY(35px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>
+
+</body>
+</html>

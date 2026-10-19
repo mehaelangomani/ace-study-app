@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ace — Clarity for Everything You Study</title>
+<meta name="description" content="Ace — extract concepts, organize knowledge, and create smarter revision materials from your study notes.">
+<meta property="og:title" content="Ace — Clarity for Everything You Study">
+<meta property="og:description" content="Ace — extract, organize, revise, and master your study content.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link href="https://db.onlinewebfonts.com/c/95cecf452d3208890088a5b4c19c7ecf?family=Helvetica+Neue+ME" rel="stylesheet">
+  <link rel="stylesheet" href="./cinematic.css">
+<script src="./mp4box.all.min.js" defer></script>
+<script src="./cinematic.js" defer></script>
+</head>
+<body>
+  <main id="scroll-track" class="scroll-track">
+    <div class="scene">
+      <video id="background-video" class="background-video" src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260821_114821_a8ca298f-be2c-4613-a4dd-51b69e16bbde.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+      <canvas id="frame-canvas" class="frame-canvas" width="1920" height="1080" aria-hidden="true"></canvas>
+      <div class="scene-content">
+<header class="navbar" id="navbar">
+  <button class="hamburger" id="menu-open" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu"><span></span><span></span><span></span></button>
+
+  <nav class="desktop-links" aria-label="Main navigation">
+    <a class="nav-link active" href="#top">ACE</a>
+    <a class="nav-link" href="#partnerships">FEATURES</a>
+    <a class="nav-link" href="#future">ABOUT</a>
+  </nav>
+
+  <div class="nav-right">
+    <a class="news-link" href="login.html">SIGN IN <span class="info-disc"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 11v5M12 8h.01"></path></svg></span></a>
+    <button class="menu-label" id="menu-label" type="button" aria-label="Open menu">MENU</button>
+  </div>
+</header>
+
+        <section class="text-section hero" id="top" aria-label="Ace introduction">
+          <div class="hero-copy">
+            <h1 class="stagger" data-delay="0">CLARITY FOR<br class="desktop-break"> EVERYTHING YOU STUDY</h1>
+            <p class="stagger" data-delay="150">EXTRACT · ORGANIZE · REVISE · MASTER</p>
+          </div>
+          <a href="#partnerships" class="circle-link hero-next stagger" data-delay="300" aria-label="Next section"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"></path></svg></a>
+        </section>
+
+        <section class="text-section partnerships" id="partnerships" aria-label="Partnerships">
+          <h2 class="stagger" data-delay="0">Study content that <span class="strong">organizes with you</span> <span class="soft">across every subject</span></h2>
+          <div class="section-controls">
+            <a href="#future" class="circle-link down stagger" data-delay="200" aria-label="Next section"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14m-6-6 6 6 6-6"></path></svg></a>
+            <div class="dots stagger" data-delay="350" aria-hidden="true"><i></i><i></i><i></i></div>
+            <a href="#top" class="circle-link up stagger" data-delay="500" aria-label="Back to top"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18 15-6-6-6 6"></path></svg></a>
+          </div>
+        </section>
+
+        <section class="text-section future" id="future" aria-label="About Ace">
+          <div class="future-copy">
+            <p class="eyebrow stagger" data-delay="0">Ace | About</p>
+            <h2 class="stagger" data-delay="150">Revision that<br>moves with you.</h2>
+            <a href="login.html" class="contact-link stagger" data-delay="300"><span>Enter Ace</span><span class="contact-disc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"></path></svg></span></a>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <div id="mobile-menu" class="mobile-menu" aria-hidden="true">
+    <div class="menu-panel">
+      <div class="menu-top"><button id="menu-close" class="close-button" type="button" aria-label="Close menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
+<nav class="mobile-links" aria-label="Mobile navigation">
+        <a class="selected" href="#top">ACE</a>
+        <a href="#partnerships">FEATURES</a>
+        <a href="#future">ABOUT</a>
+        <a href="login.html">SIGN IN</a>
+      </nav>
+      <div class="menu-footer"><a href="login.html">SIGN IN</a><a href="#future">ABOUT</a></div>
+    </div>
+  </div>
+
+  <script>
+    const navLinks = document.querySelectorAll(".desktop-links .nav-link");
+
+    navLinks.forEach(link => {
+      link.addEventListener("click", () => {
+        navLinks.forEach(item => item.classList.remove("active"));
+        link.classList.add("active");
+      });
+    });
+  </script>
+</body>
+</html>

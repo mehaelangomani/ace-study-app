@@ -1,0 +1,3 @@
+-- Ace data schema reference (live Supabase project)
+-- study_sets.source_text + study_sets.extracted_content (jsonb with concepts[])
+-- generated_materials.material_type + content jsonb, study_set_id → study_sets.id
