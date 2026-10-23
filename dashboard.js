@@ -5,7 +5,7 @@
 
 const ACE_STUDY_SETS_KEY = "aceStudySets";
 const ACE_LAST_EXTRACTION_KEY = "aceLastExtraction";
-const ACE_DEFAULT_API_BASE_URL = "http://127.0.0.1:8081";
+const ACE_DEFAULT_API_BASE_URL = "https://ace-study-app.onrender.com";
 
 function getAceApiBaseUrl() {
 

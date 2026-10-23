@@ -13,4 +13,4 @@ window.ACE_SUPABASE_URL = "";
 window.ACE_SUPABASE_ANON_KEY = "";
 
 /** FastAPI extract API (no secrets). Local default matches backend/README.md */
-window.ACE_API_BASE_URL = "http://127.0.0.1:8081";
+window.ACE_API_BASE_URL = "https://ace-study-app.onrender.com";

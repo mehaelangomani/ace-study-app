@@ -26,7 +26,7 @@ const ACE_QUIZ_PROGRESS_KEY = "aceQuizProgress";
     if (typeof global.getAceApiBaseUrl === "function") {
       return global.getAceApiBaseUrl();
     }
-    return "http://127.0.0.1:8081";
+    return "https://ace-study-app.onrender.com";
   }
 
   function formatApiError(detail) {
