@@ -1,23 +1,34 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
 :root {
-  --sky-light: #b8cbd7;
-  --sky: #8fa8b8;
-  --mist: #d7e1e6;
-  --slate: #526b7b;
-  --deep: #263b4a;
-  --night: #172936;
+  --color-bg: #ffffff;
+  --color-bg-2: #f4f6f8;
+  --color-accent: #52758f;
+  --color-accent-2: #7896ad;
+  --color-accent-light: #eaf0f5;
+  --color-accent-deep: #344b63;
+  --color-ink: #253341;
+  --color-ink-muted: #687887;
+  --color-border: #e1e7ec;
+  --color-on-accent: #ffffff;
 
-  --white: #f5f7f8;
-  --text: #edf2f4;
-  --muted: rgba(237, 242, 244, 0.62);
-  --soft: rgba(237, 242, 244, 0.38);
+  --sky-light: #eaf0f5;
+  --sky: #7896ad;
+  --mist: #f4f6f8;
+  --slate: #52758f;
+  --deep: #344b63;
+  --night: #ffffff;
 
-  --line: rgba(255, 255, 255, 0.18);
-  --surface: rgba(35, 55, 68, 0.42);
-  --surface-light: rgba(220, 230, 235, 0.08);
+  --white: #253341;
+  --text: #253341;
+  --muted: #687887;
+  --soft: rgba(104, 120, 135, 0.55);
 
-  --accent: #a9c6d2;
+  --line: #e1e7ec;
+  --surface: rgba(255, 255, 255, 0.96);
+  --surface-light: #f4f6f8;
+
+  --accent: #52758f;
 }
 
 * {
@@ -34,7 +45,7 @@ body {
 body {
   font-family: "Inter", Arial, sans-serif;
   color: var(--text);
-  background: var(--night);
+  background: var(--color-bg);
   overflow-x: hidden;
 }
 
@@ -61,25 +72,19 @@ input {
   background:
     radial-gradient(
       ellipse 75% 55% at 15% 25%,
-      rgba(188, 210, 222, 0.55),
+      rgba(234, 240, 245, 0.95),
       transparent 62%
     ),
     radial-gradient(
       ellipse 65% 50% at 78% 20%,
-      rgba(104, 132, 149, 0.55),
+      rgba(120, 150, 173, 0.14),
       transparent 65%
     ),
-    radial-gradient(
-      ellipse 70% 60% at 50% 90%,
-      rgba(54, 78, 91, 0.8),
-      transparent 70%
-    ),
     linear-gradient(
-      135deg,
-      #91aabb 0%,
-      #526c7c 35%,
-      #344c5c 65%,
-      #1c2f3c 100%
+      180deg,
+      #ffffff 0%,
+      #f4f6f8 55%,
+      #ffffff 100%
     );
 }
 
@@ -145,16 +150,10 @@ input {
 
   background:
     linear-gradient(
-      90deg,
-      rgba(228, 238, 243, 0.08),
-      transparent 35%,
-      rgba(14, 30, 41, 0.18)
-    ),
-    linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.08),
-      transparent 40%,
-      rgba(10, 24, 34, 0.25)
+      rgba(255, 255, 255, 0.55),
+      transparent 48%,
+      rgba(244, 246, 248, 0.35)
     );
 }
 
@@ -268,26 +267,16 @@ input {
 }
 
 .brand-mark {
-  width: 34px;
-  height: 34px;
-
-  display: grid;
-  place-items: center;
-
-  border: 1px solid rgba(255,255,255,0.35);
-  border-radius: 50%;
-
-  background: rgba(255,255,255,0.12);
-
-  backdrop-filter: blur(10px);
-
-  color: #fff;
-  font-size: 0.58rem;
-  letter-spacing: 0.05em;
-
-  box-shadow:
-    0 0 25px rgba(220,235,241,0.12),
-    inset 0 1px 0 rgba(255,255,255,0.3);
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  display: block;
+  object-fit: contain;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
 }
 
 .back-link {

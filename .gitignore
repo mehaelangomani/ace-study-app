@@ -1,6 +1,8 @@
-# Local Supabase credentials (publishable key still should not be committed)
-
-# Ace backend secrets
+# Local secrets and credentials
 backend/.env
 backend/.venv/
 backend/venv/
+
+# Prefer supabase-config.example.js; keep real keys out of new commits
+# (supabase-config.js may remain tracked historically — do not edit keys in git)
+supabase-config.js

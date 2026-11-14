@@ -3360,8 +3360,8 @@ if (darkThemeToggle) {
   darkThemeToggle.addEventListener("change", () => {
 
     document.body.classList.toggle(
-      "light-dashboard",
-      !darkThemeToggle.checked
+      "dark-dashboard",
+      darkThemeToggle.checked
     );
 
   });
@@ -3442,19 +3442,19 @@ document.addEventListener("DOMContentLoaded", function () {
         align-items:center;
         justify-content:center;
         padding:20px;
-        background:rgba(0,0,0,.65);
+        background:rgba(37,51,65,.32);
         backdrop-filter:blur(12px);
       ">
 
         <div style="
           width:100%;
           max-width:480px;
-          background:#181b24;
-          color:#f3f4f6;
-          border:1px solid rgba(255,255,255,.12);
+          background:#ffffff;
+          color:#253341;
+          border:1px solid #e1e7ec;
           border-radius:20px;
           padding:28px;
-          box-shadow:0 30px 80px rgba(0,0,0,.45);
+          box-shadow:0 24px 64px rgba(37,51,65,.14);
         ">
 
           <div style="
@@ -3467,7 +3467,7 @@ document.addEventListener("DOMContentLoaded", function () {
             <h2 style="
               margin:0;
               font-size:22px;
-              color:#fff;
+              color:#253341;
             ">
               Edit Profile
             </h2>
@@ -3480,8 +3480,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 height:34px;
                 border:0;
                 border-radius:10px;
-                background:rgba(255,255,255,.08);
-                color:#fff;
+                background:#eaf0f5;
+                color:#344b63;
                 font-size:22px;
                 cursor:pointer;
               "
@@ -3497,7 +3497,7 @@ document.addEventListener("DOMContentLoaded", function () {
               margin-bottom:7px;
               font-size:13px;
               font-weight:600;
-              color:#c7cad4;
+              color:#687887;
             ">
               Full Name
             </label>
@@ -3510,9 +3510,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 width:100%;
                 padding:12px 14px;
                 border-radius:10px;
-                border:1px solid rgba(255,255,255,.12);
-                background:#0f1117;
-                color:#fff;
+                border:1px solid #e1e7ec;
+                background:#ffffff;
+                color:#253341;
                 outline:none;
                 box-sizing:border-box;
               "
@@ -3525,7 +3525,7 @@ document.addEventListener("DOMContentLoaded", function () {
               margin-bottom:7px;
               font-size:13px;
               font-weight:600;
-              color:#c7cad4;
+              color:#687887;
             ">
               Email Address
             </label>
@@ -3538,9 +3538,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 width:100%;
                 padding:12px 14px;
                 border-radius:10px;
-                border:1px solid rgba(255,255,255,.12);
-                background:#0f1117;
-                color:#fff;
+                border:1px solid #e1e7ec;
+                background:#ffffff;
+                color:#253341;
                 outline:none;
                 box-sizing:border-box;
               "
@@ -3553,7 +3553,7 @@ document.addEventListener("DOMContentLoaded", function () {
               margin-bottom:7px;
               font-size:13px;
               font-weight:600;
-              color:#c7cad4;
+              color:#687887;
             ">
               About
             </label>
@@ -3566,9 +3566,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 width:100%;
                 padding:12px 14px;
                 border-radius:10px;
-                border:1px solid rgba(255,255,255,.12);
-                background:#0f1117;
-                color:#fff;
+                border:1px solid #e1e7ec;
+                background:#ffffff;
+                color:#253341;
                 outline:none;
                 resize:vertical;
                 box-sizing:border-box;
@@ -3588,9 +3588,9 @@ document.addEventListener("DOMContentLoaded", function () {
               style="
                 padding:11px 18px;
                 border-radius:10px;
-                border:1px solid rgba(255,255,255,.12);
-                background:rgba(255,255,255,.06);
-                color:#fff;
+                border:1px solid #e1e7ec;
+                background:#f4f6f8;
+                color:#344b63;
                 cursor:pointer;
               "
             >
@@ -3604,8 +3604,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 padding:11px 20px;
                 border-radius:10px;
                 border:0;
-                background:linear-gradient(135deg,#26384d,#4a6d8c);
-                color:#fff;
+                background:linear-gradient(135deg,#52758f,#344b63);
+                color:#ffffff;
                 font-weight:600;
                 cursor:pointer;
               "

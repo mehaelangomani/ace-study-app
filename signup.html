@@ -5,17 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Ace — Create Account</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48x48.png">
 
   <style>
     :root {
-  --night: #10202d;
-  --deep: #1a3040;
-  --blue-grey: #4d6879;
-  --steel: #8fa8b7;
-  --text: #f4f7f9;
-  --muted: rgba(226, 235, 240, .72);
-  --line: rgba(220, 232, 239, .20);
-  --glass: rgba(40, 63, 78, .60);
+  --night: #ffffff;
+  --deep: #344b63;
+  --blue-grey: #7896ad;
+  --steel: #52758f;
+  --text: #253341;
+  --muted: #687887;
+  --line: #e1e7ec;
+  --glass: rgba(255, 255, 255, .96);
 }
 
     * {
@@ -43,24 +46,19 @@
   background:
     radial-gradient(
       ellipse at 15% 15%,
-      rgba(176, 201, 213, .28),
-      transparent 34%
+      rgba(234, 240, 245, .95),
+      transparent 38%
     ),
     radial-gradient(
       ellipse at 85% 20%,
-      rgba(116, 151, 169, .28),
-      transparent 40%
-    ),
-    radial-gradient(
-      ellipse at 50% 100%,
-      rgba(79, 113, 132, .30),
-      transparent 50%
+      rgba(120, 150, 173, .14),
+      transparent 42%
     ),
     linear-gradient(
-      135deg,
-      #10202d 0%,
-      #1b3444 48%,
-      #294657 100%
+      180deg,
+      #ffffff 0%,
+      #f4f6f8 52%,
+      #ffffff 100%
     );
 }
 
@@ -150,22 +148,25 @@ border-bottom: 1px solid rgba(220, 232, 239, .16);
     }
 
     .logo {
-      color: #f1f5f7;
+      display: inline-flex;
+      align-items: center;
       text-decoration: none;
-
-      font-size: 14px;
-      font-weight: 650;
-
-      letter-spacing: .16em;
-      text-transform: uppercase;
-
+      line-height: 0;
       transition:
         opacity .25s ease,
         transform .25s ease;
     }
 
+    .logo img {
+      width: 56px;
+      height: 56px;
+      display: block;
+      object-fit: contain;
+      background: transparent;
+    }
+
     .logo:hover {
-      opacity: .75;
+      opacity: .85;
       transform: translateY(-1px);
     }
 
@@ -885,7 +886,9 @@ border-bottom: 1px solid rgba(220, 232, 239, .16);
 
   <!-- TOP BAR -->
   <header class="topbar">
-    <a href="index.html" class="logo">Ace</a>
+    <a href="index.html" class="logo">
+      <img src="assets/ace-logo.png" alt="Ace" width="56" height="56" decoding="async">
+    </a>
 
     <a href="index.html" class="back">
       ← Back to landing

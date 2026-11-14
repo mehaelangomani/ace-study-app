@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ace — Secure Checkout</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48x48.png">
 
   <style>
     * {
@@ -15,11 +18,11 @@
     body {
       min-height: 100vh;
       font-family: Inter, Arial, sans-serif;
-      color: #eef4ff;
+      color: #253341;
       background:
-        radial-gradient(circle at 15% 15%, rgba(115,160,190,.18), transparent 30%),
-        radial-gradient(circle at 85% 80%, rgba(120,150,180,.14), transparent 32%),
-        linear-gradient(135deg, #07111f, #152a3b 55%, #081522);
+        radial-gradient(circle at 15% 15%, rgba(234, 240, 245, .95), transparent 34%),
+        radial-gradient(circle at 85% 80%, rgba(120, 150, 173, .12), transparent 34%),
+        linear-gradient(180deg, #ffffff 0%, #f4f6f8 55%, #ffffff 100%);
       padding: 28px;
     }
 
@@ -36,15 +39,22 @@
     }
 
     .logo {
-      color: white;
+      display: inline-flex;
+      align-items: center;
       text-decoration: none;
-      font-weight: 700;
-      letter-spacing: .08em;
-      font-size: 20px;
+      line-height: 0;
+    }
+
+    .logo img {
+      width: 56px;
+      height: 56px;
+      display: block;
+      object-fit: contain;
+      background: transparent;
     }
 
     .back {
-      color: rgba(235,242,255,.7);
+      color: #687887;
       text-decoration: none;
       border: 1px solid rgba(255,255,255,.14);
       padding: 10px 16px;
@@ -89,13 +99,13 @@
     }
 
     .intro {
-      color: rgba(235,242,255,.58);
+      color: rgba(104,120,135,.58);
       line-height: 1.7;
       margin-bottom: 35px;
     }
 
     .plan-name {
-      color: rgba(235,242,255,.5);
+      color: rgba(104,120,135,.5);
       font-size: 12px;
       text-transform: uppercase;
       letter-spacing: .15em;
@@ -109,7 +119,7 @@
 
     .price span {
       font-size: 13px;
-      color: rgba(235,242,255,.45);
+      color: rgba(104,120,135,.45);
     }
 
     .features {
@@ -119,7 +129,7 @@
     .features li {
       padding: 12px 0;
       border-bottom: 1px solid rgba(255,255,255,.07);
-      color: rgba(235,242,255,.7);
+      color: rgba(104,120,135,.7);
       font-size: 14px;
     }
 
@@ -142,7 +152,7 @@
     label {
       display: block;
       font-size: 12px;
-      color: rgba(235,242,255,.65);
+      color: rgba(104,120,135,.65);
       margin-bottom: 7px;
     }
 
@@ -159,7 +169,7 @@
     }
 
     input::placeholder {
-      color: rgba(235,242,255,.28);
+      color: rgba(104,120,135,.28);
     }
 
     input:focus,
@@ -169,8 +179,8 @@
     }
 
     select option {
-      background: #152a3b;
-      color: white;
+      background: linear-gradient(135deg, #52758f, #344b63);
+      color: #ffffff;
     }
 
     .row {
@@ -189,7 +199,7 @@
     }
 
     .summary span:first-child {
-      color: rgba(235,242,255,.6);
+      color: rgba(104,120,135,.6);
     }
 
     .summary strong {
@@ -217,7 +227,7 @@
 
     .secure {
       text-align: center;
-      color: rgba(235,242,255,.38);
+      color: rgba(104,120,135,.38);
       font-size: 11px;
       margin-top: 16px;
     }
@@ -248,7 +258,7 @@
     }
 
     .success p {
-      color: rgba(235,242,255,.55);
+      color: rgba(104,120,135,.55);
       line-height: 1.6;
       margin-bottom: 25px;
     }
@@ -294,7 +304,9 @@
   <div class="page">
 
     <header class="topbar">
-      <a href="dashboard.html" class="logo">Ace</a>
+      <a href="dashboard.html" class="logo">
+        <img src="assets/ace-logo.png" alt="Ace" width="56" height="56" decoding="async">
+      </a>
       <a href="pricing.html" class="back">← Back to plans</a>
     </header>
 

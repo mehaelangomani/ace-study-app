@@ -17,8 +17,10 @@
 <body>
   <main id="scroll-track" class="scroll-track">
     <div class="scene">
-      <video id="background-video" class="background-video" src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260821_114821_a8ca298f-be2c-4613-a4dd-51b69e16bbde.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
-      <canvas id="frame-canvas" class="frame-canvas" width="1920" height="1080" aria-hidden="true"></canvas>
+      <video id="background-video" class="background-video" src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260821_114821_a8ca298f-be2c-4613-a4dd-51b69e16bbde.mp4" muted playsinline preload="metadata" aria-hidden="true"></video>
+      <div class="scene-fallback" id="scene-fallback" aria-hidden="true"></div>
+      <canvas id="frame-canvas" class="frame-canvas frame-layer" width="1920" height="1080" aria-hidden="true"></canvas>
+      <canvas id="frame-canvas-alt" class="frame-canvas frame-layer" width="1920" height="1080" aria-hidden="true"></canvas>
       <div class="scene-content">
 <header class="navbar" id="navbar">
   <button class="hamburger" id="menu-open" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu"><span></span><span></span><span></span></button>
