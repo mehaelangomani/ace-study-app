@@ -1,10 +1,183 @@
 import json
+import logging
 import re
+import time
 from typing import Any
 
 from fastapi import HTTPException, status
 from google import genai
 from google.genai import types
+
+logger = logging.getLogger("ace.gemini")
+
+MAX_GEMINI_RETRIES = 3
+_GEMINI_RETRY_BASE_SECONDS = 1.0
+
+
+def _gemini_error_message(exc: BaseException) -> str:
+    return (str(exc) or exc.__class__.__name__).strip()
+
+
+def _sanitize_client_error_detail(message: str) -> str:
+    lowered = message.lower()
+    if "api key" in lowered or "api_key" in lowered:
+        return (
+            "Gemini authentication failed on the server. "
+            "Check GEMINI_API_KEY configuration."
+        )
+    if len(message) > 480:
+        return message[:477] + "..."
+    return message
+
+
+def _is_gemini_non_retryable(message: str, lowered: str) -> bool:
+    markers = (
+        "invalid api key",
+        "api key not valid",
+        "api_key_invalid",
+        "permission denied",
+        "unauthenticated",
+        "unauthorized",
+        "invalid_argument",
+        "bad request",
+    )
+    if any(marker in lowered for marker in markers):
+        return True
+    if "401" in message:
+        return True
+    if "403" in message and "forbidden" in lowered:
+        return True
+    if "404" in message and "model" in lowered:
+        return True
+    return False
+
+
+def _is_gemini_retryable(message: str, lowered: str) -> bool:
+    if _is_gemini_non_retryable(message, lowered):
+        return False
+    if "429" in message or "rate limit" in lowered or "quota" in lowered:
+        return True
+    if "503" in message or "unavailable" in lowered or "high demand" in lowered:
+        return True
+    if "500" in message or "internal error" in lowered:
+        return True
+    if "deadline exceeded" in lowered or "timed out" in lowered or "timeout" in lowered:
+        return True
+    return False
+
+
+def _http_exception_for_gemini_failure(exc: BaseException) -> HTTPException:
+    message = _gemini_error_message(exc)
+    lowered = message.lower()
+    detail = _sanitize_client_error_detail(message)
+
+    if _is_gemini_non_retryable(message, lowered):
+        if "404" in message and "model" in lowered:
+            return HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=(
+                    "Gemini model error. Check GEMINI_MODEL in backend/.env. "
+                    + _sanitize_client_error_detail(message)
+                ),
+            )
+        if "401" in message or "invalid api key" in lowered or "api key not valid" in lowered:
+            return HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=_sanitize_client_error_detail(
+                    "Gemini rejected the configured API key."
+                ),
+            )
+        return HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=detail or "Gemini request was rejected.",
+        )
+
+    if "429" in message or "rate limit" in lowered or "quota" in lowered:
+        return HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Gemini rate limit was reached. Wait a moment and try again."
+            ),
+        )
+
+    if (
+        "503" in message
+        or "unavailable" in lowered
+        or "high demand" in lowered
+        or "500" in message
+    ):
+        return HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Gemini is temporarily unavailable due to high demand. "
+                "Please try again in a few moments."
+            ),
+        )
+
+    if "deadline exceeded" in lowered or "timed out" in lowered or "timeout" in lowered:
+        return HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail=(
+                "The Gemini request timed out. Try again with shorter notes "
+                "or wait a moment."
+            ),
+        )
+
+    return HTTPException(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        detail=detail or "Gemini request failed.",
+    )
+
+
+def _generate_content_with_retry(
+    client: genai.Client,
+    *,
+    model: str,
+    contents: str,
+    config: types.GenerateContentConfig,
+) -> Any:
+    last_exc: BaseException | None = None
+
+    for attempt in range(MAX_GEMINI_RETRIES + 1):
+        try:
+            return client.models.generate_content(
+                model=model,
+                contents=contents,
+                config=config,
+            )
+        except Exception as exc:
+            last_exc = exc
+            message = _gemini_error_message(exc)
+            lowered = message.lower()
+
+            if not _is_gemini_retryable(message, lowered):
+                raise _http_exception_for_gemini_failure(exc) from exc
+
+            if attempt >= MAX_GEMINI_RETRIES:
+                logger.warning(
+                    "gemini retries exhausted attempts=%s error_class=%s",
+                    attempt + 1,
+                    exc.__class__.__name__,
+                )
+                break
+
+            delay = _GEMINI_RETRY_BASE_SECONDS * (2**attempt)
+            logger.warning(
+                "gemini transient error attempt=%s max_attempts=%s retry_in_seconds=%.1f error_class=%s",
+                attempt + 1,
+                MAX_GEMINI_RETRIES + 1,
+                delay,
+                exc.__class__.__name__,
+            )
+            time.sleep(delay)
+
+    if last_exc is not None:
+        raise _http_exception_for_gemini_failure(last_exc) from last_exc
+
+    raise HTTPException(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        detail="Gemini request failed.",
+    )
 
 
 EXTRACT_JSON_SCHEMA: dict[str, Any] = {
@@ -264,62 +437,13 @@ def extract_concepts_with_gemini(
         f"{notes}"
     )
 
-    client = genai.Client(api_key=api_key)
-
-    try:
-        response = client.models.generate_content(
-            model=model,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=EXTRACT_JSON_SCHEMA,
-                temperature=0.25,
-            ),
-        )
-    except Exception as exc:
-        message = str(exc)
-        lowered = message.lower()
-
-        if "429" in message or "quota" in lowered or "rate" in lowered:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=f"Gemini quota or rate limit exceeded: {message}",
-            ) from exc
-
-        if "404" in message and "model" in lowered:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=(
-                    f"Gemini model error (check GEMINI_MODEL in backend/.env): {message}"
-                ),
-            ) from exc
-
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Gemini request failed: {message}",
-        ) from exc
-
-    raw_text = getattr(response, "text", None) or ""
-
-    if not raw_text.strip():
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Gemini returned an empty response.",
-        )
-
-    try:
-        parsed = json.loads(_strip_code_fence(raw_text))
-    except json.JSONDecodeError:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Gemini returned invalid JSON.",
-        )
-
-    if not isinstance(parsed, dict):
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Gemini returned an unexpected response shape.",
-        )
+    parsed = _generate_json_with_gemini(
+        api_key=api_key,
+        model=model,
+        prompt=prompt,
+        schema=EXTRACT_JSON_SCHEMA,
+        temperature=0.25,
+    )
 
     payload = normalize_extraction_payload(
         parsed,
@@ -566,39 +690,21 @@ def _generate_json_with_gemini(
         )
 
     client = genai.Client(api_key=api_key)
+    config = types.GenerateContentConfig(
+        response_mime_type="application/json",
+        response_schema=schema,
+        temperature=temperature,
+    )
 
     try:
-        response = client.models.generate_content(
+        response = _generate_content_with_retry(
+            client,
             model=model,
             contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=schema,
-                temperature=temperature,
-            ),
+            config=config,
         )
-    except Exception as exc:
-        message = str(exc)
-        lowered = message.lower()
-
-        if "429" in message or "quota" in lowered or "rate" in lowered:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=f"Gemini quota or rate limit exceeded: {message}",
-            ) from exc
-
-        if "404" in message and "model" in lowered:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=(
-                    f"Gemini model error (check GEMINI_MODEL in backend/.env): {message}"
-                ),
-            ) from exc
-
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Gemini request failed: {message}",
-        ) from exc
+    except HTTPException:
+        raise
 
     raw_text = getattr(response, "text", None) or ""
 
