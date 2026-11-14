@@ -576,9 +576,37 @@
 
     return (
       formatted.code === "PGRST204" ||
+      formatted.code === "42703" ||
       (lowered.indexOf("column") >= 0 && lowered.indexOf("does not exist") >= 0) ||
       lowered.indexOf("could not find") >= 0
     );
+
+  }
+
+  async function fetchQuizAttemptsOrdered(supabase, userId) {
+
+    var base = supabase
+      .from("quiz_attempts")
+      .select("*")
+      .eq("user_id", userId)
+      .limit(50);
+
+    var compactOrder = await base.order("completed_at", { ascending: false });
+
+    if (!compactOrder.error) {
+      return compactOrder;
+    }
+
+    if (!isPostgrestMissingColumnError(compactOrder.error)) {
+      return compactOrder;
+    }
+
+    return supabase
+      .from("quiz_attempts")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(50);
 
   }
 
@@ -1622,12 +1650,7 @@
       return { data: [], error: null };
     }
 
-    var result = await supabase
-      .from("quiz_attempts")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(50);
+    var result = await fetchQuizAttemptsOrdered(supabase, userId);
 
     if (result.error) {
       return { data: [], error: formatDbError(result.error) };
