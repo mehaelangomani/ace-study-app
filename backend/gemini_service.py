@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 import time
 from typing import Any
@@ -12,6 +13,13 @@ logger = logging.getLogger("ace.gemini")
 
 MAX_GEMINI_RETRIES = 3
 _GEMINI_RETRY_BASE_SECONDS = 1.0
+
+GEMINI_SINGLE_REQUEST_TIMEOUT_SECONDS = float(
+    os.getenv("GEMINI_REQUEST_TIMEOUT_SECONDS", "90")
+)
+GEMINI_RETRY_MAX_WALL_SECONDS = float(
+    os.getenv("GEMINI_RETRY_MAX_WALL_SECONDS", "180")
+)
 
 
 def _gemini_error_message(exc: BaseException) -> str:
@@ -52,14 +60,27 @@ def _is_gemini_non_retryable(message: str, lowered: str) -> bool:
     return False
 
 
-def _is_gemini_retryable(message: str, lowered: str) -> bool:
+def _is_gemini_retryable(
+    message: str,
+    lowered: str,
+    exc: BaseException | None = None,
+) -> bool:
     if _is_gemini_non_retryable(message, lowered):
         return False
+    if exc is not None and exc.__class__.__name__ in (
+        "ServerError",
+        "ServiceUnavailable",
+        "DeadlineExceeded",
+        "TimeoutError",
+    ):
+        return True
+    if isinstance(exc, TimeoutError):
+        return True
     if "429" in message or "rate limit" in lowered or "quota" in lowered:
         return True
     if "503" in message or "unavailable" in lowered or "high demand" in lowered:
         return True
-    if "500" in message or "internal error" in lowered:
+    if "500" in message or "internal error" in lowered or "servererror" in lowered:
         return True
     if "deadline exceeded" in lowered or "timed out" in lowered or "timeout" in lowered:
         return True
@@ -70,6 +91,15 @@ def _http_exception_for_gemini_failure(exc: BaseException) -> HTTPException:
     message = _gemini_error_message(exc)
     lowered = message.lower()
     detail = _sanitize_client_error_detail(message)
+
+    if isinstance(exc, TimeoutError) or exc.__class__.__name__ == "TimeoutError":
+        return HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail=(
+                "The Gemini request timed out. Try again with shorter notes "
+                "or wait a moment."
+            ),
+        )
 
     if _is_gemini_non_retryable(message, lowered):
         if "404" in message and "model" in lowered:
@@ -129,49 +159,152 @@ def _http_exception_for_gemini_failure(exc: BaseException) -> HTTPException:
     )
 
 
-def _generate_content_with_retry(
+def _gemini_client_for_attempt(api_key: str, timeout_seconds: float) -> genai.Client:
+    """SDK HTTP timeout (ms) bounds the blocking socket read; no orphan threads."""
+    timeout_ms = max(1000, int(timeout_seconds * 1000))
+    return genai.Client(
+        api_key=api_key,
+        http_options=types.HttpOptions(timeout=timeout_ms),
+    )
+
+
+def _invoke_generate_content(
     client: genai.Client,
     *,
     model: str,
     contents: str,
     config: types.GenerateContentConfig,
 ) -> Any:
+    return client.models.generate_content(
+        model=model,
+        contents=contents,
+        config=config,
+    )
+
+
+def _generate_content_with_retry(
+    *,
+    api_key: str,
+    model: str,
+    contents: str,
+    config: types.GenerateContentConfig,
+    operation: str = "gemini",
+) -> Any:
     last_exc: BaseException | None = None
+    deadline = time.monotonic() + GEMINI_RETRY_MAX_WALL_SECONDS
+
+    logger.info(
+        "%s start model=%s max_attempts=%s per_call_timeout_seconds=%.0f max_wall_seconds=%.0f",
+        operation,
+        model,
+        MAX_GEMINI_RETRIES + 1,
+        GEMINI_SINGLE_REQUEST_TIMEOUT_SECONDS,
+        GEMINI_RETRY_MAX_WALL_SECONDS,
+    )
 
     for attempt in range(MAX_GEMINI_RETRIES + 1):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            logger.warning(
+                "%s wall clock exceeded before attempt=%s",
+                operation,
+                attempt + 1,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                detail=(
+                    "The Gemini request timed out after multiple attempts. "
+                    "Try again with shorter notes or wait a moment."
+                ),
+            )
+
+        per_call_timeout = min(
+            GEMINI_SINGLE_REQUEST_TIMEOUT_SECONDS,
+            max(1.0, remaining),
+        )
+
         try:
-            return client.models.generate_content(
+            client = _gemini_client_for_attempt(api_key, per_call_timeout)
+            result = _invoke_generate_content(
+                client,
                 model=model,
                 contents=contents,
                 config=config,
             )
+            logger.info("%s success attempt=%s", operation, attempt + 1)
+            return result
         except Exception as exc:
-            last_exc = exc
             message = _gemini_error_message(exc)
             lowered = message.lower()
-
-            if not _is_gemini_retryable(message, lowered):
-                raise _http_exception_for_gemini_failure(exc) from exc
-
-            if attempt >= MAX_GEMINI_RETRIES:
+            if (
+                "timeout" in lowered
+                or "timed out" in lowered
+                or exc.__class__.__name__ in ("APITimeoutError", "TimeoutException")
+            ):
+                last_exc = TimeoutError(
+                    f"Gemini call exceeded {per_call_timeout:.0f}s"
+                )
                 logger.warning(
-                    "gemini retries exhausted attempts=%s error_class=%s",
+                    "%s attempt timeout attempt=%s timeout_seconds=%.1f error_class=%s",
+                    operation,
                     attempt + 1,
+                    per_call_timeout,
                     exc.__class__.__name__,
                 )
-                break
+            else:
+                last_exc = exc
 
-            delay = _GEMINI_RETRY_BASE_SECONDS * (2**attempt)
+        if last_exc is None:
+            continue
+
+        message = _gemini_error_message(last_exc)
+        lowered = message.lower()
+
+        if not _is_gemini_retryable(message, lowered, last_exc):
             logger.warning(
-                "gemini transient error attempt=%s max_attempts=%s retry_in_seconds=%.1f error_class=%s",
+                "%s non-retryable failure attempt=%s error_class=%s",
+                operation,
                 attempt + 1,
-                MAX_GEMINI_RETRIES + 1,
-                delay,
-                exc.__class__.__name__,
+                last_exc.__class__.__name__,
             )
-            time.sleep(delay)
+            raise _http_exception_for_gemini_failure(last_exc) from last_exc
+
+        if attempt >= MAX_GEMINI_RETRIES:
+            logger.warning(
+                "%s retries exhausted attempts=%s error_class=%s",
+                operation,
+                attempt + 1,
+                last_exc.__class__.__name__,
+            )
+            break
+
+        delay = _GEMINI_RETRY_BASE_SECONDS * (2**attempt)
+        if time.monotonic() + delay > deadline:
+            logger.warning(
+                "%s wall clock exceeded during backoff attempt=%s",
+                operation,
+                attempt + 1,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                detail=(
+                    "The Gemini request timed out after multiple attempts. "
+                    "Try again with shorter notes or wait a moment."
+                ),
+            ) from last_exc
+
+        logger.warning(
+            "%s transient error attempt=%s max_attempts=%s retry_in_seconds=%.1f error_class=%s",
+            operation,
+            attempt + 1,
+            MAX_GEMINI_RETRIES + 1,
+            delay,
+            last_exc.__class__.__name__,
+        )
+        time.sleep(delay)
 
     if last_exc is not None:
+        logger.warning("%s final failure error_class=%s", operation, last_exc.__class__.__name__)
         raise _http_exception_for_gemini_failure(last_exc) from last_exc
 
     raise HTTPException(
@@ -415,6 +548,12 @@ def extract_concepts_with_gemini(
             detail="GEMINI_API_KEY is not configured on the server.",
         )
 
+    logger.info(
+        "extract gemini start notes_length=%s title_present=%s",
+        len(notes),
+        bool(title and str(title).strip()),
+    )
+
     prompt = (
         "You are an expert study coach creating revision material from student notes.\n\n"
         "STRICT RULES:\n"
@@ -443,6 +582,7 @@ def extract_concepts_with_gemini(
         prompt=prompt,
         schema=EXTRACT_JSON_SCHEMA,
         temperature=0.25,
+        operation="extract",
     )
 
     payload = normalize_extraction_payload(
@@ -457,6 +597,12 @@ def extract_concepts_with_gemini(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Gemini did not return usable study material for these notes.",
         )
+
+    logger.info(
+        "extract gemini success concepts=%s definitions=%s",
+        len(payload.get("key_concepts") or []),
+        len(payload.get("definitions") or []),
+    )
 
     return payload
 
@@ -682,6 +828,7 @@ def _generate_json_with_gemini(
     prompt: str,
     schema: dict[str, Any],
     temperature: float = 0.25,
+    operation: str = "gemini_json",
 ) -> dict[str, Any]:
     if not api_key:
         raise HTTPException(
@@ -689,7 +836,6 @@ def _generate_json_with_gemini(
             detail="GEMINI_API_KEY is not configured on the server.",
         )
 
-    client = genai.Client(api_key=api_key)
     config = types.GenerateContentConfig(
         response_mime_type="application/json",
         response_schema=schema,
@@ -698,10 +844,11 @@ def _generate_json_with_gemini(
 
     try:
         response = _generate_content_with_retry(
-            client,
+            api_key=api_key,
             model=model,
             contents=prompt,
             config=config,
+            operation=operation,
         )
     except HTTPException:
         raise

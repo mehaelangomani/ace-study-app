@@ -24,6 +24,8 @@ Optional:
 
 - `CORS_ORIGINS` — add your production site origin (comma-separated, no trailing slash), e.g. `https://yourdomain.com`
 - `GEMINI_MODEL` — default `gemini-2.0-flash`
+- `GEMINI_REQUEST_TIMEOUT_SECONDS` — per-attempt HTTP timeout via Gemini SDK `HttpOptions` (default `90`, seconds)
+- `GEMINI_RETRY_MAX_WALL_SECONDS` — total wall time for retries + backoff on the request thread (default `180`)
 - `QUIZ_GRADING_SECRET` — server-only key for signing quiz grading tokens. If unset, the API derives one from `GEMINI_API_KEY` + `SUPABASE_URL` (or uses `SUPABASE_JWT_SECRET` when set).
 
 ## Run

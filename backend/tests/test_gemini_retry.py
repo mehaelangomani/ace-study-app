@@ -37,12 +37,16 @@ class GeminiRetryTests(unittest.TestCase):
             ok_response,
         ]
 
-        result = _generate_content_with_retry(
-            client,
-            model="gemini-test",
-            contents="hello",
-            config=MagicMock(),
-        )
+        with patch(
+            "gemini_service._gemini_client_for_attempt",
+            return_value=client,
+        ):
+            result = _generate_content_with_retry(
+                api_key="test-key",
+                model="gemini-test",
+                contents="hello",
+                config=MagicMock(),
+            )
 
         self.assertIs(result, ok_response)
         self.assertEqual(client.models.generate_content.call_count, 3)
@@ -57,13 +61,17 @@ class GeminiRetryTests(unittest.TestCase):
             MAX_GEMINI_RETRIES + 1
         )
 
-        with self.assertRaises(HTTPException) as ctx:
-            _generate_content_with_retry(
-                client,
-                model="gemini-test",
-                contents="hello",
-                config=MagicMock(),
-            )
+        with patch(
+            "gemini_service._gemini_client_for_attempt",
+            return_value=client,
+        ):
+            with self.assertRaises(HTTPException) as ctx:
+                _generate_content_with_retry(
+                    api_key="test-key",
+                    model="gemini-test",
+                    contents="hello",
+                    config=MagicMock(),
+                )
 
         self.assertEqual(ctx.exception.status_code, 503)
         self.assertEqual(
