@@ -360,19 +360,30 @@
           </div>
 
           <div class="cheatsheet-library-head">
-            <h3>Your cheatsheets</h3>
-            <p>Open, revise, or manage cheatsheets you have saved.</p>
+            <h3>Your deck</h3>
+            <p>Cheatsheets you have pinned to your deck.</p>
           </div>
 
           <div class="empty-card" id="cheatsheetsEmptyState">
             <span>≡</span>
-            <h3>No cheatsheets yet</h3>
-            <p>
-              Save a study set to your library, then generate your first AI cheatsheet above.
-            </p>
+            <h3>Your deck is empty</h3>
+            <p>Generate a cheatsheet, then use Save to Your Deck to pin it here.</p>
           </div>
 
           <div class="create-grid ace-hidden" id="cheatsheetsGrid"></div>
+
+          <div class="cheatsheet-library-head quiz-attempts-head">
+            <h3>Recent cheatsheets</h3>
+            <p>Your latest saved and generated cheatsheets.</p>
+          </div>
+
+          <div class="empty-card ace-hidden" id="recentCheatsheetsEmptyState">
+            <span>≡</span>
+            <h3>No recent cheatsheets</h3>
+            <p>Generate a cheatsheet above to see it here.</p>
+          </div>
+
+          <div class="create-grid ace-hidden" id="recentCheatsheetsGrid"></div>
         </div>
       </section>
 
@@ -408,7 +419,7 @@
                 id="cheatsheetSaveBtn"
                 type="button"
               >
-                Save cheatsheet
+                Save to Your Deck
               </button>
             </div>
           </div>
@@ -887,17 +898,30 @@
           </div>
 
           <div class="cheatsheet-library-head">
-            <h3>Your formula sheets</h3>
-            <p>Open, save, or manage formula sheets you have generated.</p>
+            <h3>Your deck</h3>
+            <p>Formula sheets you have pinned to your deck.</p>
           </div>
 
           <div class="empty-card" id="formulaSheetsEmptyState">
             <span>ƒ</span>
-            <h3>No formula sheets yet</h3>
-            <p>Save a study set with equations, then generate your first AI formula sheet above.</p>
+            <h3>Your deck is empty</h3>
+            <p>Generate a formula sheet, then use Save to Your Deck to pin it here.</p>
           </div>
 
           <div class="create-grid ace-hidden" id="formulaSheetsGrid"></div>
+
+          <div class="cheatsheet-library-head quiz-attempts-head">
+            <h3>Recent formula sheets</h3>
+            <p>Your latest saved and generated formula sheets.</p>
+          </div>
+
+          <div class="empty-card ace-hidden" id="recentFormulaSheetsEmptyState">
+            <span>ƒ</span>
+            <h3>No recent formula sheets</h3>
+            <p>Generate a formula sheet above to see it here.</p>
+          </div>
+
+          <div class="create-grid ace-hidden" id="recentFormulaSheetsGrid"></div>
         </div>
       </section>
 
@@ -919,7 +943,7 @@
                 Open study set
               </button>
               <button class="upgrade-settings-btn" id="formulaSaveSheetBtn" type="button">
-                Save Formula Sheet
+                Save to Your Deck
               </button>
               <button class="detail-button" id="formulaDeleteSheetBtn" type="button">
                 Delete

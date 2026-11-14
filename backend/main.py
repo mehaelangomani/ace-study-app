@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, HTTPException, status
@@ -22,6 +23,8 @@ from quiz_service import (
 )
 
 app = FastAPI(title="Ace API", version="1.0.0")
+
+logger = logging.getLogger("ace.api")
 
 settings = get_settings()
 
@@ -183,18 +186,41 @@ def health() -> dict[str, str]:
 @app.post("/api/extract", response_model=ExtractResponse)
 def api_extract(
     body: ExtractRequest,
-    _user: Annotated[dict, Depends(get_current_user)],
+    user: Annotated[dict, Depends(get_current_user)],
 ) -> ExtractResponse:
-    _ = _user["user_id"]
+    user_id = user["user_id"]
+    notes_len = len(body.notes)
 
-    ai_result = extract_concepts_with_gemini(
-        api_key=settings["gemini_api_key"],
-        model=settings["gemini_model"],
-        notes=body.notes,
-        title=body.title,
-        subject=body.subject,
-        difficulty=body.difficulty,
+    logger.info(
+        "extract api start user_id=%s notes_length=%s",
+        user_id,
+        notes_len,
     )
+
+    try:
+        ai_result = extract_concepts_with_gemini(
+            api_key=settings["gemini_api_key"],
+            model=settings["gemini_model"],
+            notes=body.notes,
+            title=body.title,
+            subject=body.subject,
+            difficulty=body.difficulty,
+        )
+    except HTTPException as exc:
+        logger.warning(
+            "extract api failed user_id=%s status=%s",
+            user_id,
+            exc.status_code,
+        )
+        raise
+    except Exception:
+        logger.exception("extract api unexpected failure user_id=%s", user_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Extraction failed on the server. Please try again.",
+        )
+
+    logger.info("extract api success user_id=%s notes_length=%s", user_id, notes_len)
 
     return ExtractResponse(
         title=ai_result["title"],

@@ -40,6 +40,24 @@
     return null;
   }
 
+  function formatRelativeDate(iso) {
+    if (typeof global.formatRelativeDate === "function") {
+      return global.formatRelativeDate(iso);
+    }
+    if (!iso) {
+      return "Recently";
+    }
+    try {
+      var date = new Date(iso);
+      if (Number.isNaN(date.getTime())) {
+        return "Recently";
+      }
+      return date.toLocaleDateString();
+    } catch (error) {
+      return "Recently";
+    }
+  }
+
   function getStudySets() {
     if (global.AceDB && typeof global.AceDB.getCachedStudySets === "function") {
       return global.AceDB.getCachedStudySets();
@@ -186,18 +204,39 @@
     return total;
   }
 
+  function isSheetPinned(row) {
+    if (row && global.AceDB?.isMaterialPinnedToDeck) {
+      return global.AceDB.isMaterialPinnedToDeck(row);
+    }
+    if (activeSheet?.content?.pinned_to_deck === true) {
+      return true;
+    }
+    if (activeSheet?.content?.pinned_to_deck === false) {
+      return false;
+    }
+    return Boolean(activeSheet?.materialId);
+  }
+
   function updateSaveSheetUi() {
     var status = document.getElementById("formulaSaveStatus");
     var btn = document.getElementById("formulaSaveSheetBtn");
-    var saved = Boolean(activeSheet?.materialId);
+    var row =
+      activeSheet?.materialId &&
+      global.AceDB?.getMaterialsByType &&
+      global.AceDB.getMaterialsByType(
+        global.AceDB.MATERIAL_TYPES.formula_sheet
+      ).find(function (entry) {
+        return entry.id === activeSheet.materialId;
+      });
+    var pinned = isSheetPinned(row || { content: activeSheet?.content });
     if (status) {
-      status.textContent = saved
-        ? "Saved to your library"
-        : "Not saved yet — use Save Formula Sheet";
+      status.textContent = pinned
+        ? "In your deck"
+        : "In Recent — use Save to Your Deck to pin";
     }
     if (btn) {
-      btn.textContent = saved ? "Formula sheet saved" : "Save Formula Sheet";
-      btn.toggleAttribute("disabled", saved);
+      btn.textContent = pinned ? "In your deck" : "Save to Your Deck";
+      btn.toggleAttribute("disabled", pinned);
     }
   }
 
@@ -210,12 +249,27 @@
       global.showToast?.("Sign in to save formula sheets.");
       return;
     }
-    if (activeSheet.materialId) {
-      global.showToast?.("Formula sheet already saved!");
+    if (!activeSheet.content) {
+      global.showToast?.("Nothing to save.");
+      return;
+    }
+
+    if (
+      activeSheet.materialId &&
+      global.AceDB?.isMaterialPinnedToDeck?.(
+        global.AceDB.getMaterialsByType(
+          global.AceDB.MATERIAL_TYPES.formula_sheet
+        ).find(function (row) {
+          return row.id === activeSheet.materialId;
+        }) || { content: activeSheet.content }
+      )
+    ) {
+      global.showToast?.("Formula sheet is already in your deck.");
       updateSaveSheetUi();
       return;
     }
-    if (!global.AceDB?.saveFormulaSheet) {
+
+    if (!global.AceDB?.setMaterialDeckPinned && !global.AceDB?.saveFormulaSheet) {
       global.showToast?.("Database helpers are unavailable.");
       return;
     }
@@ -223,33 +277,98 @@
     formulaSaveInFlight = true;
     try {
       var studySet = activeSheet.studySet || {};
-      var saveResult = await global.AceDB.saveFormulaSheet(profile.id, {
-        study_set_id: studySet.id || activeSheet.studySetId,
-        material_type: global.AceDB.MATERIAL_TYPES.formula_sheet,
-        title: (activeSheet.title || studySet.title || "Formula sheet") + " — Formulas",
-        content: activeSheet.content,
-        existing_material_id: activeSheet.materialId
-      });
+      var pinnedContent = global.AceDB.withDeckPinInContent
+        ? global.AceDB.withDeckPinInContent(activeSheet.content, true)
+        : Object.assign({}, activeSheet.content, { pinned_to_deck: true });
 
-      if (saveResult.error) {
-        var message = global.AceDB.formatUserFacingSaveError
-          ? global.AceDB.formatUserFacingSaveError(saveResult.error, "Formula sheet")
-          : "Formula sheet could not be saved.";
-        global.showToast?.(message);
-        return;
+      if (activeSheet.materialId && global.AceDB.updateGeneratedMaterial) {
+        var pinResult = await global.AceDB.updateGeneratedMaterial(
+          profile.id,
+          activeSheet.materialId,
+          { content: pinnedContent }
+        );
+        if (pinResult.error) {
+          global.showToast?.("Could not save to your deck.");
+          return;
+        }
+        activeSheet.content = pinResult.data?.content || pinnedContent;
+        global.showToast?.("Saved to your deck.");
+      } else {
+        var saveResult = await global.AceDB.saveFormulaSheet(profile.id, {
+          study_set_id: studySet.id || activeSheet.studySetId,
+          material_type: global.AceDB.MATERIAL_TYPES.formula_sheet,
+          title:
+            (activeSheet.title || studySet.title || "Formula sheet") +
+            " — Formulas",
+          content: pinnedContent,
+          existing_material_id: activeSheet.materialId
+        });
+
+        if (saveResult.error) {
+          var message = global.AceDB.formatUserFacingSaveError
+            ? global.AceDB.formatUserFacingSaveError(
+                saveResult.error,
+                "Formula sheet"
+              )
+            : "Formula sheet could not be saved.";
+          global.showToast?.(message);
+          return;
+        }
+
+        global.showToast?.(
+          saveResult.alreadySaved
+            ? "Formula sheet is already in your deck."
+            : "Saved to your deck."
+        );
+        activeSheet.materialId = saveResult.data?.id || null;
+        activeSheet.content = saveResult.data?.content || pinnedContent;
       }
 
-      global.showToast?.(
-        saveResult.alreadySaved ? "Formula sheet already saved!" : "Formula sheet saved!"
-      );
-      activeSheet.materialId = saveResult.data?.id || null;
       await global.AceDB.refreshMaterialsCache?.(profile.id);
       global.renderGeneratedMaterialViews?.();
       renderFormulaSheetsGrid();
+      global.AceFormulaSheets.renderRecentFormulaSheets?.();
       updateSaveSheetUi();
     } finally {
       formulaSaveInFlight = false;
     }
+  }
+
+  async function unpinFormulaSheetFromDeck(row) {
+    if (!row?.id) {
+      return;
+    }
+    if (
+      !window.confirm(
+        'Remove "' +
+          (row.title || "this formula sheet") +
+          '" from your deck? It will return to Recent.'
+      )
+    ) {
+      return;
+    }
+    var profile = getProfile();
+    if (!profile?.id || !global.AceDB?.setMaterialDeckPinned) {
+      return;
+    }
+    var result = await global.AceDB.setMaterialDeckPinned(
+      profile.id,
+      row.id,
+      false
+    );
+    if (result.error) {
+      global.showToast?.("Could not remove from your deck.");
+      return;
+    }
+    if (activeSheet?.materialId === row.id) {
+      activeSheet.content = result.data?.content || activeSheet.content;
+      updateSaveSheetUi();
+    }
+    await global.AceDB.refreshMaterialsCache?.(profile.id);
+    global.renderGeneratedMaterialViews?.();
+    renderFormulaSheetsGrid();
+    global.AceFormulaSheets.renderRecentFormulaSheets?.();
+    global.showToast?.("Removed from your deck.");
   }
 
   async function deleteSavedSheet() {
@@ -639,17 +758,37 @@
 
       var fingerprint = buildSheetFingerprint(studySet.id, payload);
       var materialContent = buildMaterialContent(payload, fingerprint);
+      var recentContent = global.AceDB.withDeckPinInContent
+        ? global.AceDB.withDeckPinInContent(materialContent, false)
+        : Object.assign({}, materialContent, { pinned_to_deck: false });
+
+      var insertResult = await global.AceDB.insertGeneratedMaterial(profile.id, {
+        study_set_id: studySet.id,
+        material_type: global.AceDB.MATERIAL_TYPES.formula_sheet,
+        title: (payload.title || studySet.title || "Formula sheet") + " — Formulas",
+        content: recentContent
+      });
+
+      if (insertResult.error) {
+        throw new Error(
+          global.AceDB.formatDbError(insertResult.error).message ||
+            "Could not save generated formula sheet."
+        );
+      }
 
       openFormulaSheetView({
         title: payload.title,
-        content: materialContent,
-        materialId: null,
+        content: insertResult.data?.content || recentContent,
+        materialId: insertResult.data?.id || null,
         studySetId: studySet.id,
         studySetTitle: studySet.title,
         studySet: studySet
       });
 
-      global.showToast?.("Formula sheet ready. Save when you're happy with it.");
+      global.renderGeneratedMaterialViews?.();
+      global.showToast?.(
+        "Formula sheet generated. Save to Your Deck when you are ready."
+      );
     } catch (error) {
       var message =
         error instanceof Error
@@ -680,6 +819,83 @@
     return haystack.indexOf(term) >= 0;
   }
 
+  function renderRecentFormulaSheets() {
+    var grid = document.getElementById("recentFormulaSheetsGrid");
+    var empty = document.getElementById("recentFormulaSheetsEmptyState");
+    if (!grid || !global.AceDB) {
+      return;
+    }
+
+    var rows = global.AceDB.getMaterialsByType(
+      global.AceDB.MATERIAL_TYPES.formula_sheet
+    )
+      .filter(function (row) {
+        return row.content && row.content.schema === "ai_formula_sheet_v1";
+      })
+      .filter(function (row) {
+        return global.AceDB.isMaterialInRecent
+          ? global.AceDB.isMaterialInRecent(row)
+          : true;
+      });
+
+    if (typeof global.AceDB.sortMaterialsNewestFirst === "function") {
+      rows = global.AceDB.sortMaterialsNewestFirst(rows);
+    }
+
+    rows = rows.slice(0, 12);
+
+    grid.innerHTML = "";
+
+    if (!rows.length) {
+      grid.classList.add("ace-hidden");
+      empty?.classList.remove("ace-hidden");
+      var emptyText = empty?.querySelector("p");
+      if (emptyText) {
+        emptyText.textContent =
+          "Generate a formula sheet above to see it here.";
+      }
+      return;
+    }
+
+    empty?.classList.add("ace-hidden");
+    grid.classList.remove("ace-hidden");
+
+    rows.forEach(function (row) {
+      var article = document.createElement("article");
+      article.className = "recent-card library-card";
+      var when =
+        typeof global.AceDB.materialDisplayTimestamp === "function"
+          ? global.AceDB.materialDisplayTimestamp(row)
+          : row.created_at;
+      var count =
+        row.content?.formula_count ||
+        (row.content?.categories || []).reduce(function (sum, cat) {
+          return sum + (cat.formulas || []).length;
+        }, 0);
+
+      article.innerHTML =
+        '<div class="recent-type">FORMULAS</div>' +
+        "<h3>" +
+        escapeHtml(row.title || "Formula sheet") +
+        "</h3>" +
+        "<p>" +
+        count +
+        " formula(s)</p>" +
+        '<div class="recent-footer">' +
+        "<span>" +
+        escapeHtml(formatRelativeDate(when)) +
+        "</span>" +
+        "<span>Open</span>" +
+        "</div>";
+
+      article.addEventListener("click", function () {
+        openFormulaFromMaterial(row);
+      });
+
+      grid.appendChild(article);
+    });
+  }
+
   function renderFormulaSheetsGrid() {
     var grid = document.getElementById("formulaSheetsGrid");
     var empty = document.getElementById("formulaSheetsEmptyState");
@@ -690,12 +906,22 @@
     var term = gridSearchTerm.trim().toLowerCase();
     var rows = global.AceDB.getMaterialsByType(
       global.AceDB.MATERIAL_TYPES.formula_sheet
-    ).filter(function (row) {
-      if (row.content?.schema === "ai_formula_sheet_v1") {
-        return rowMatchesGridSearch(row, term);
-      }
-      return false;
-    });
+    )
+      .filter(function (row) {
+        if (row.content?.schema === "ai_formula_sheet_v1") {
+          return (
+            rowMatchesGridSearch(row, term) &&
+            (global.AceDB.isMaterialPinnedToDeck
+              ? global.AceDB.isMaterialPinnedToDeck(row)
+              : true)
+          );
+        }
+        return (
+          global.AceDB.isMaterialPinnedToDeck
+            ? global.AceDB.isMaterialPinnedToDeck(row)
+            : true
+        );
+      });
 
     grid.querySelectorAll(".library-card").forEach(function (c) {
       c.remove();
@@ -724,12 +950,20 @@
         " formula(s)</p>" +
         '<div class="cheatsheet-card-actions">' +
         '<button class="detail-button" type="button" data-action="open">Open</button>' +
+        '<button class="library-delete" type="button" data-action="unpin">Remove from deck</button>' +
         "</div>";
       article.querySelector('[data-action="open"]')?.addEventListener(
         "click",
         function (event) {
           event.stopPropagation();
           openFormulaFromMaterial(row);
+        }
+      );
+      article.querySelector('[data-action="unpin"]')?.addEventListener(
+        "click",
+        function (event) {
+          event.stopPropagation();
+          unpinFormulaSheetFromDeck(row);
         }
       );
       article.addEventListener("click", function () {
@@ -807,6 +1041,7 @@
     init: init,
     populateFormulaStudySetSelect: populateFormulaStudySetSelect,
     renderFormulaSheetsGrid: renderFormulaSheetsGrid,
+    renderRecentFormulaSheets: renderRecentFormulaSheets,
     generateFormulaSheetFromUi: generateFormulaSheetFromUi,
     openFormulaFromMaterial: openFormulaFromMaterial
   };

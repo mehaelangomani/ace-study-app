@@ -295,6 +295,8 @@ function extractionHasContent(extraction) {
 let extractionInFlight = false;
 let extractionStepInterval = null;
 let extractionSlowHintTimeout = null;
+/** Slightly above backend GEMINI_RETRY_MAX_WALL_SECONDS (default 180s). */
+const ACE_EXTRACT_REQUEST_TIMEOUT_MS = 195000;
 
 function clearExtractionProgressTimers() {
 
@@ -1012,10 +1014,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     }
 
+    const pinnedToDeck =
+      row?.id &&
+      typeof window.AceDB?.isMaterialPinnedToDeck === "function" &&
+      window.AceDB.isMaterialPinnedToDeck(row);
+
     cheatsheetSaveBtn?.classList.toggle(
       "ace-hidden",
-      Boolean(row?.id && !cheatsheetViewState.isDirty)
+      Boolean(pinnedToDeck && !cheatsheetViewState.isDirty)
     );
+
+    if (cheatsheetSaveBtn && !cheatsheetSaveBtn.classList.contains("ace-hidden")) {
+      cheatsheetSaveBtn.textContent = cheatsheetViewState.isDirty
+        ? "Save changes"
+        : "Save to Your Deck";
+    }
 
     if (cheatsheetQuickRevBtn) {
       cheatsheetQuickRevBtn.textContent = cheatsheetViewState.quickRevision
@@ -1327,12 +1340,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (cheatsheetViewState.row?.id && cheatsheetViewState.isDirty) {
 
+      const priorPin = cheatsheetViewState.row.content?.pinned_to_deck;
+      const contentToSave =
+        priorPin === undefined
+          ? content
+          : Object.assign({}, content, { pinned_to_deck: priorPin });
+
       const updateResult = await window.AceDB.updateGeneratedMaterial(
         profile?.id,
         cheatsheetViewState.row.id,
         {
           title: cheatsheetViewState.row.title,
-          content
+          content: contentToSave
         }
       );
 
@@ -1356,7 +1375,31 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (cheatsheetViewState.row?.id && !cheatsheetViewState.isDirty) {
-      showToast("This cheatsheet is already saved.");
+      if (window.AceDB.isMaterialPinnedToDeck(cheatsheetViewState.row)) {
+        showToast("This cheatsheet is already in your deck.");
+        return;
+      }
+
+      const pinContent = window.AceDB.withDeckPinInContent(content, true);
+
+      const pinResult = await window.AceDB.updateGeneratedMaterial(
+        profile?.id,
+        cheatsheetViewState.row.id,
+        { content: pinContent }
+      );
+
+      if (pinResult.error) {
+        showToast(
+          window.AceDB.formatDbError(pinResult.error).message ||
+            "Could not save to your deck."
+        );
+        return;
+      }
+
+      cheatsheetViewState.row = pinResult.data;
+      renderGeneratedMaterialViews();
+      renderCheatsheetReader();
+      showToast("Saved to your deck.");
       return;
     }
 
@@ -1364,13 +1407,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       cheatsheetViewState.row?.title ||
       `${content.title || "Study set"} — Cheatsheet`;
 
+  const deckContent =
+      typeof window.AceDB.withDeckPinInContent === "function"
+        ? window.AceDB.withDeckPinInContent(content, true)
+        : Object.assign({}, content, { pinned_to_deck: true });
+
     const insertResult = await window.AceDB.insertGeneratedMaterial(
       profile?.id,
       {
         study_set_id: studySetId,
         material_type: window.AceDB.MATERIAL_TYPES.cheatsheet,
         title,
-        content
+        content: deckContent
       }
     );
 
@@ -1388,7 +1436,56 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     renderGeneratedMaterialViews();
     renderCheatsheetReader();
-    showToast("Cheatsheet saved to your library.");
+    showToast("Saved to your deck.");
+
+  }
+
+
+  async function unpinCheatsheetFromDeck(row) {
+
+    if (!row?.id) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Remove "${row.title || "this cheatsheet"}" from your deck? It will return to Recent.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const profile = getAuthSession();
+
+    if (
+      !window.AceDB ||
+      typeof window.AceDB.setMaterialDeckPinned !== "function"
+    ) {
+      showToast("Database helpers are unavailable.");
+      return;
+    }
+
+    const result = await window.AceDB.setMaterialDeckPinned(
+      profile?.id,
+      row.id,
+      false
+    );
+
+    if (result.error) {
+      showToast(
+        window.AceDB.formatDbError(result.error).message ||
+          "Could not remove from your deck."
+      );
+      return;
+    }
+
+  if (cheatsheetViewState.row?.id === row.id) {
+      cheatsheetViewState.row = result.data;
+      renderCheatsheetReader();
+    }
+
+    renderGeneratedMaterialViews();
+    showToast("Removed from your deck.");
 
   }
 
@@ -1504,6 +1601,76 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
+  function renderRecentCheatsheets() {
+
+    const grid = document.getElementById("recentCheatsheetsGrid");
+    const empty = document.getElementById("recentCheatsheetsEmptyState");
+
+    if (!grid || !window.AceDB) {
+      return;
+    }
+
+    let rows = window.AceDB.getMaterialsByType(
+      window.AceDB.MATERIAL_TYPES.cheatsheet
+    ).filter(row =>
+      typeof window.AceDB.isMaterialInRecent === "function"
+        ? window.AceDB.isMaterialInRecent(row)
+        : true
+    );
+
+    if (typeof window.AceDB.sortMaterialsNewestFirst === "function") {
+      rows = window.AceDB.sortMaterialsNewestFirst(rows);
+    }
+
+    rows = rows.slice(0, 12);
+
+    grid.innerHTML = "";
+    grid.querySelectorAll(".library-card").forEach(card => card.remove());
+
+    if (!rows.length) {
+      grid.classList.add("ace-hidden");
+      empty?.classList.remove("ace-hidden");
+      const emptyText = empty?.querySelector("p");
+      if (emptyText) {
+        emptyText.textContent = "Generate a cheatsheet above to see it here.";
+      }
+      return;
+    }
+
+    empty?.classList.add("ace-hidden");
+    grid.classList.remove("ace-hidden");
+
+    rows.forEach(row => {
+
+      const article = document.createElement("article");
+      article.className = "recent-card library-card";
+
+      const when =
+        typeof window.AceDB.materialDisplayTimestamp === "function"
+          ? window.AceDB.materialDisplayTimestamp(row)
+          : row.created_at;
+
+      article.innerHTML = `
+        <div class="recent-type">CHEATSHEET</div>
+        <h3>${escapeHtml(row.title || "Untitled cheatsheet")}</h3>
+        <p>${escapeHtml(summarizeMaterialPreview(row))}</p>
+        <div class="recent-footer">
+          <span>${formatRelativeDate(when)}</span>
+          <span>Open</span>
+        </div>
+      `;
+
+      article.addEventListener("click", () => {
+        openCheatsheetView({ row });
+      });
+
+      grid.appendChild(article);
+
+    });
+
+  }
+
+
   function renderCheatsheetsGrid() {
 
     const grid = document.getElementById("cheatsheetsGrid");
@@ -1515,6 +1682,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const rows = window.AceDB.getMaterialsByType(
       window.AceDB.MATERIAL_TYPES.cheatsheet
+    ).filter(row =>
+      typeof window.AceDB.isMaterialPinnedToDeck === "function"
+        ? window.AceDB.isMaterialPinnedToDeck(row)
+        : true
     );
 
     grid
@@ -1541,13 +1712,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         <p>${escapeHtml(summarizeMaterialPreview(row))}</p>
         <div class="recent-footer">
           <span>${formatRelativeDate(row.created_at)}</span>
-          <span>${row.study_set_id ? "Linked study set" : "Saved"}</span>
+          <span>${row.study_set_id ? "Linked study set" : "In your deck"}</span>
         </div>
         <div class="cheatsheet-card-actions">
           <button class="detail-button" type="button" data-action="open">Open</button>
           <button class="detail-button" type="button" data-action="quick">Quick revision</button>
           <button class="detail-button" type="button" data-action="rename">Rename</button>
-          <button class="library-delete" type="button" data-action="delete">Delete</button>
+          <button class="library-delete" type="button" data-action="unpin">Remove from deck</button>
         </div>
       `;
 
@@ -1575,11 +1746,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       );
 
-      article.querySelector('[data-action="delete"]')?.addEventListener(
+      article.querySelector('[data-action="unpin"]')?.addEventListener(
         "click",
         event => {
           event.stopPropagation();
-          deleteCheatsheetRow(row);
+          unpinCheatsheetFromDeck(row);
         }
       );
 
@@ -1687,18 +1858,37 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const wrapped = wrapCheatsheetContent(payload);
       const draftTitle = `${studySet.title || wrapped.title} — Cheatsheet`;
+      const recentContent =
+        typeof window.AceDB.withDeckPinInContent === "function"
+          ? window.AceDB.withDeckPinInContent(wrapped, false)
+          : Object.assign({}, wrapped, { pinned_to_deck: false });
+
+      const insertResult = await window.AceDB.insertGeneratedMaterial(
+        profile.id,
+        {
+          study_set_id: studySet.id || null,
+          material_type: window.AceDB.MATERIAL_TYPES.cheatsheet,
+          title: draftTitle,
+          content: recentContent
+        }
+      );
+
+      if (insertResult.error) {
+        throw new Error(
+          window.AceDB.formatDbError(insertResult.error).message ||
+            "Could not save generated cheatsheet."
+        );
+      }
 
       openCheatsheetView({
-        draft: wrapped,
+        row: insertResult.data,
+        draft: null,
         studySetId: studySet.id || null,
-        isDirty: true,
-        row: {
-          title: draftTitle,
-          study_set_id: studySet.id || null
-        }
+        isDirty: false
       });
 
-      showToast("Cheatsheet generated. Review and save when ready.");
+      renderGeneratedMaterialViews();
+      showToast("Cheatsheet generated. Save to Your Deck when you are ready.");
 
     } catch (error) {
 
@@ -1730,6 +1920,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     renderCheatsheetsGrid();
+    renderRecentCheatsheets();
     populateCheatsheetStudySetSelect();
 
     if (window.AceQuiz && typeof window.AceQuiz.renderQuizzesGrid === "function") {
@@ -1749,6 +1940,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       typeof window.AceFormulaSheets.renderFormulaSheetsGrid === "function"
     ) {
       window.AceFormulaSheets.renderFormulaSheetsGrid();
+      window.AceFormulaSheets.renderRecentFormulaSheets?.();
     }
 
   }
@@ -2107,6 +2299,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
+  async function fetchExtractWithTimeout(url, options, timeoutMs) {
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      return await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+
+  }
+
+
   async function runExtraction() {
 
     if (extractionInFlight) {
@@ -2182,7 +2391,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       }
 
-      const response = await fetch(
+      const response = await fetchExtractWithTimeout(
         `${getAceApiBaseUrl()}/api/extract`,
         {
           method: "POST",
@@ -2196,7 +2405,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             subject: null,
             difficulty: null
           })
-        }
+        },
+        ACE_EXTRACT_REQUEST_TIMEOUT_MS
       );
 
       let payload = null;
@@ -2240,14 +2450,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     } catch (error) {
 
-      const offline =
-        error && error.message === "Failed to fetch";
+      if (error && error.name === "AbortError") {
+        extractionErrorMessage =
+          "Extraction timed out. The server may still be busy — try again with shorter notes or wait a moment.";
+      } else {
+        const offline =
+          error && error.message === "Failed to fetch";
 
-      extractionErrorMessage = offline
-        ? `Cannot reach the Ace API at ${getAceApiBaseUrl()}. ` +
-          `Confirm the backend is on port 8081 and CORS allows ${window.location.origin}.`
-        : (error && error.message) ||
-            "Extraction failed. Please try again.";
+        extractionErrorMessage = offline
+          ? `Cannot reach the Ace API at ${getAceApiBaseUrl()}. ` +
+            `Check your connection and that the backend is running (Render or local).`
+          : (error && error.message) ||
+              "Extraction failed. Please try again.";
+      }
 
     } finally {
 
@@ -2444,6 +2659,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (pageName === "cheatsheets") {
       populateCheatsheetStudySetSelect();
       renderCheatsheetsGrid();
+      renderRecentCheatsheets();
     }
 
     if (pageName === "quizzes") {
@@ -2461,6 +2677,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (pageName === "formula-sheets") {
       window.AceFormulaSheets?.populateFormulaStudySetSelect?.();
       window.AceFormulaSheets?.renderFormulaSheetsGrid?.();
+      window.AceFormulaSheets?.renderRecentFormulaSheets?.();
     }
 
     if (

@@ -1005,6 +1005,119 @@
 
   }
 
+  function materialDisplayTimestamp(row) {
+
+    if (!row) {
+      return null;
+    }
+
+    return row.created_at || row.updated_at || null;
+
+  }
+
+  function sortMaterialsNewestFirst(rows) {
+
+    var list = (rows || []).slice();
+
+    list.sort(function (a, b) {
+      var ta = Date.parse(materialDisplayTimestamp(a) || "") || 0;
+      var tb = Date.parse(materialDisplayTimestamp(b) || "") || 0;
+      return tb - ta;
+    });
+
+    return list;
+
+  }
+
+  function materialDeckPinExplicit(row) {
+
+    if (!row || !row.content || typeof row.content !== "object") {
+      return null;
+    }
+
+    if (row.content.pinned_to_deck === true) {
+      return true;
+    }
+
+    if (row.content.pinned_to_deck === false) {
+      return false;
+    }
+
+    return null;
+
+  }
+
+  function isMaterialPinnedToDeck(row) {
+
+    var explicit = materialDeckPinExplicit(row);
+
+    if (explicit === true) {
+      return true;
+    }
+
+    if (explicit === false) {
+      return false;
+    }
+
+    return true;
+
+  }
+
+  function isMaterialInRecent(row) {
+    return materialDeckPinExplicit(row) === false;
+  }
+
+  function withDeckPinInContent(content, pinned) {
+
+    return Object.assign({}, content || {}, {
+      pinned_to_deck: Boolean(pinned)
+    });
+
+  }
+
+  async function setMaterialDeckPinned(userId, materialId, pinned) {
+
+    var cached = (materialsCache || readLocalMaterials()).find(function (row) {
+      return row.id === materialId;
+    });
+
+    if (!cached) {
+      return {
+        data: null,
+        error: formatDbError({ message: "Material not found." })
+      };
+    }
+
+    var content = withDeckPinInContent(cached.content, pinned);
+
+    return updateGeneratedMaterial(userId, materialId, { content: content });
+
+  }
+
+  async function fetchGeneratedMaterialsOrdered(supabase, userId) {
+
+    var byCreated = await supabase
+      .from("generated_materials")
+      .select(GENERATED_MATERIAL_COLUMNS)
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (!byCreated.error) {
+      return byCreated;
+    }
+
+    if (!isPostgrestMissingColumnError(byCreated.error)) {
+      return byCreated;
+    }
+
+    return supabase
+      .from("generated_materials")
+      .select(GENERATED_MATERIAL_COLUMNS)
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false });
+
+  }
+
   async function fetchGeneratedMaterials(userId) {
 
     var supabase = client();
@@ -1013,11 +1126,7 @@
       return { data: [], error: null };
     }
 
-    var result = await supabase
-      .from("generated_materials")
-      .select(GENERATED_MATERIAL_COLUMNS)
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+    var result = await fetchGeneratedMaterialsOrdered(supabase, userId);
 
     if (result.error) {
       return { data: [], error: formatDbError(result.error) };
@@ -1705,6 +1814,13 @@
     deleteStudySet: deleteStudySet,
     fetchStudySets: fetchStudySets,
     getMaterialsByType: getMaterialsByType,
+    materialDisplayTimestamp: materialDisplayTimestamp,
+    sortMaterialsNewestFirst: sortMaterialsNewestFirst,
+    materialDeckPinExplicit: materialDeckPinExplicit,
+    isMaterialPinnedToDeck: isMaterialPinnedToDeck,
+    isMaterialInRecent: isMaterialInRecent,
+    withDeckPinInContent: withDeckPinInContent,
+    setMaterialDeckPinned: setMaterialDeckPinned,
     insertGeneratedMaterial: insertGeneratedMaterial,
     saveFlashcardDeck: saveFlashcardDeck,
     saveFormulaSheet: saveFormulaSheet,
