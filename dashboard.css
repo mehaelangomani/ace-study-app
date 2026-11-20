@@ -3584,6 +3584,7 @@ body.no-glass .status-banner {
 
 .formula-category-section {
   margin-bottom: 1.25rem;
+  padding: 1.25rem;
 }
 
 .formula-category-section h3 {
@@ -3592,7 +3593,7 @@ body.no-glass .status-banner {
 
 .formula-item-card {
   border-top: 1px solid rgba(143, 182, 217, 0.15);
-  padding: 1rem 0;
+  padding: 1rem 1.25rem;
 }
 
 .formula-item-card:first-of-type {
@@ -3646,8 +3647,13 @@ body.no-glass .status-banner {
   padding-left: 1.25rem;
 }
 
+.formula-overview {
+  padding: 1.25rem;
+}
+
 .formula-quick-ref {
   margin-bottom: 1rem;
+  padding: 1.25rem;
 }
 
 .formula-quick-list {
@@ -3663,6 +3669,7 @@ body.no-glass .status-banner {
 
 .formula-math-block {
   overflow-x: auto;
+  padding: 0.5rem 0;
 }
 
 .formula-source {
